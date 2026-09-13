@@ -15,13 +15,50 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isPersistent, setIsPersistent] = useState<boolean | null>(null);
+  const [isRequestingPersistence, setIsRequestingPersistence] = useState(false);
+  const [persistenceMessage, setPersistenceMessage] = useState<{ text: string; type: 'success' | 'warning' | 'info' | 'error' } | null>(null);
 
   useEffect(() => {
     loadData();
     if (navigator.storage?.persisted) {
-      navigator.storage.persisted().then(setIsPersistent);
+      navigator.storage.persisted().then(setIsPersistent).catch(() => {});
     }
   }, []);
+
+  async function handleRequestPersistence() {
+    setIsRequestingPersistence(true);
+    setPersistenceMessage(null);
+    try {
+      if (!navigator.storage?.persist) {
+        setPersistenceMessage({
+          text: 'La función de almacenamiento persistente no es compatible con este navegador.',
+          type: 'info'
+        });
+        setIsRequestingPersistence(false);
+        return;
+      }
+      const granted = await navigator.storage.persist();
+      setIsPersistent(granted);
+      if (granted) {
+        setPersistenceMessage({
+          text: 'El almacenamiento persistente está activado correctamente.',
+          type: 'success'
+        });
+      } else {
+        setPersistenceMessage({
+          text: 'El navegador rechazó la solicitud de almacenamiento persistente. Sus lecturas siguen guardándose localmente, pero podrían eliminarse si el navegador necesita liberar espacio.',
+          type: 'warning'
+        });
+      }
+    } catch (err) {
+      setPersistenceMessage({
+        text: 'No se pudo completar la solicitud de almacenamiento persistente.',
+        type: 'error'
+      });
+    } finally {
+      setIsRequestingPersistence(false);
+    }
+  }
 
   async function loadData() {
     setReadings(await getAllReadings());
@@ -169,9 +206,30 @@ export default function App() {
       <main className="max-w-3xl mx-auto px-4 pt-6 space-y-6">
         {successMsg && <div className="bg-emerald-100 text-emerald-900 p-3 rounded-xl font-bold flex items-center space-x-2"><CheckCircle2 className="w-6 h-6"/><span>{successMsg}</span></div>}
         {isPersistent === false && (
-          <div className="bg-amber-100 text-amber-900 p-4 rounded-xl flex justify-between items-center shadow">
-            <span>Active el almacenamiento persistente.</span>
-            <button onClick={() => navigator.storage?.persist?.().then(setIsPersistent)} className="bg-amber-600 text-white font-bold px-4 py-2 rounded-lg min-h-[44px]">Activar</button>
+          <div className="bg-amber-100 text-amber-900 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow" role="status">
+            <div>
+              <span className="font-bold block">Active el almacenamiento persistente.</span>
+              {persistenceMessage && (
+                <p className="text-sm mt-1 text-amber-800">{persistenceMessage.text}</p>
+              )}
+            </div>
+            <button 
+              onClick={handleRequestPersistence} 
+              disabled={isRequestingPersistence}
+              className="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-lg min-h-[44px] whitespace-nowrap"
+            >
+              {isRequestingPersistence ? 'Activando...' : 'Activar'}
+            </button>
+          </div>
+        )}
+        {isPersistent === true && persistenceMessage && (
+          <div className="bg-emerald-100 text-emerald-900 p-4 rounded-xl shadow" role="status">
+            <p className="font-bold">{persistenceMessage.text}</p>
+          </div>
+        )}
+        {persistenceMessage && isPersistent !== false && isPersistent !== true && (
+          <div className="bg-slate-100 text-slate-900 p-4 rounded-xl shadow" role="status">
+            <p className="font-bold">{persistenceMessage.text}</p>
           </div>
         )}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
