@@ -178,9 +178,15 @@ export default function App() {
           <button onClick={generatePDF} disabled={!readings.length} className="bg-white p-3 rounded-2xl border-2 border-sky-200 font-bold text-sky-900 flex flex-col items-center disabled:opacity-50 min-h-[56px]"><FileText className="w-6 h-6 text-sky-700 mb-1"/>PDF</button>
           <button onClick={handleShare} disabled={!readings.length} className="bg-white p-3 rounded-2xl border-2 border-sky-200 font-bold text-sky-900 flex flex-col items-center disabled:opacity-50 min-h-[56px]"><Share2 className="w-6 h-6 text-sky-700 mb-1"/>Compartir</button>
           <button onClick={handleExportJson} disabled={!readings.length} className="bg-white p-3 rounded-2xl border-2 border-sky-200 font-bold text-sky-900 flex flex-col items-center disabled:opacity-50 min-h-[56px]"><Download className="w-6 h-6 text-sky-700 mb-1"/>Backup</button>
-          <label className="bg-white p-3 rounded-2xl border-2 border-sky-200 font-bold text-sky-900 flex flex-col items-center cursor-pointer min-h-[56px]"><Upload className="w-6 h-6 text-sky-700 mb-1"/>Restaurar<input type="file" accept=".json" onChange={handleImportJson} className="hidden"/></label>
+          <div className="relative flex flex-col items-center">
+            <button disabled className="w-full h-full bg-slate-100 p-3 rounded-2xl border-2 border-slate-200 font-bold text-slate-400 flex flex-col items-center justify-center opacity-70 cursor-not-allowed min-h-[56px]">
+              <Upload className="w-6 h-6 text-slate-400 mb-1"/>Restaurar
+            </button>
+            <span className="absolute -bottom-5 text-[10px] text-slate-500 font-bold whitespace-nowrap">Disponible próximamente</span>
+          </div>
         </div>
-        <section className="space-y-4">
+        <div className="pt-3"></div>
+        <section className="space-y-4 pt-2">
           <h2 className="text-2xl font-extrabold text-slate-800">Historial</h2>
           {!readings.length ? (
             <div className="bg-white border-2 border-dashed border-sky-200 rounded-3xl p-10 text-center space-y-3">
@@ -237,7 +243,7 @@ export default function App() {
                 </div>
               </div>
               <div>
-                <label className="font-bold block mb-1">Pulso</label>
+                <label className="font-bold block nis-1">Pulso</label>
                 <input type="number" min="10" max="250" value={pulse} onChange={e => setPulse(e.target.value)} className="w-full text-2xl font-bold p-3 bg-sky-50 border-2 rounded-2xl text-center min-h-[52px]" required />
               </div>
               <div>
