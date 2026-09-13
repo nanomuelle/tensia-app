@@ -1,0 +1,31 @@
+# Dependencias
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+
+# PWA generado automáticamente
+dev-dist/
+
+# Entornos y secretos (claves de API, etc.)
+.env
+.env.local
+.env.*.local
+
+# Editor / SO
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Cache de Vite/TypeScript
+.vite/
+*.tsbuildinfo
