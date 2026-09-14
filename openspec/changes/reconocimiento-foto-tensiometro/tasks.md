@@ -1,7 +1,7 @@
 ## 1. Configuración de Base de Datos y Almacenamiento Local de API Key
 
-- [ ] 1.1 Ampliar el esquema de Dexie en `src/db.ts` para incluir una tabla `settings` o equivalente para almacenar la clave de API de Gemini y verificar que compila correctamente.
-- [ ] 1.2 Implementar funciones auxiliares para guardar, recuperar y eliminar la clave de API de Gemini en `src/db.ts`, verificando su persistencia en IndexedDB.
+- [x] 1.1 Ampliar el esquema de Dexie en `src/db.ts` para incluir una tabla `settings` o equivalente para almacenar la clave de API de Gemini y verificar que compila correctamente.
+- [x] 1.2 Implementar funciones auxiliares para guardar, recuperar y eliminar la clave de API de Gemini en `src/db.ts`, verificando su persistencia en IndexedDB.
 
 ## 2. Cliente de Gemini Vision y Servicio de OCR
 

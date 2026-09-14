@@ -12,13 +12,23 @@ export interface BloodPressureRecord {
   notes?: string;
 }
 
+export interface AppSetting {
+  key: string;
+  value: string;
+}
+
 export class BloodPressureDatabase extends Dexie {
   readings!: Table<BloodPressureRecord, number>;
+  settings!: Table<AppSetting, string>;
 
   constructor() {
     super('TensiaDatabase');
     this.version(1).stores({
       readings: '++id, systolic, diastolic, pulse, timestamp, period'
+    });
+    this.version(2).stores({
+      readings: '++id, systolic, diastolic, pulse, timestamp, period',
+      settings: 'key'
     });
   }
 }
@@ -86,3 +96,23 @@ export async function exportDatabaseToJson(): Promise<string> {
   const all = await db.readings.toArray();
   return JSON.stringify(all, null, 2);
 }
+
+// Settings / Gemini API Key helper functions
+export async function getGeminiApiKey(): Promise<string | null> {
+  try {
+    const record = await db.settings.get('gemini_api_key');
+    return record ? record.value : null;
+  } catch (err) {
+    console.error('Error fetching Gemini API key:', err);
+    return null;
+  }
+}
+
+export async function setGeminiApiKey(apiKey: string): Promise<void> {
+  await db.settings.put({ key: 'gemini_api_key', value: apiKey.trim() });
+}
+
+export async function removeGeminiApiKey(): Promise<void> {
+  await db.settings.delete('gemini_api_key');
+}
+
