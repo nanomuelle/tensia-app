@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Heart, Calendar, FileText, Download, Upload, Share2, Trash2, Edit2, CheckCircle2, X, Activity } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Heart, Calendar, FileText, Download, Upload, Share2, Trash2, Edit2, CheckCircle2, X, Activity, MoreVertical, Key, Camera, Loader2 } from 'lucide-react';
 import { ApiKeyModal } from './components/ApiKeyModal';
 import { PrivacyModal } from './components/PrivacyModal';
 import { PhotoCaptureModal } from './components/PhotoCaptureModal';
 import { getGeminiApiKey } from './db';
 import { compressImage, analyzeBloodPressureImage } from './services/gemini';
-import { Key, Camera, Loader2 } from 'lucide-react';
 
 import { BloodPressureRecord, getAllReadings, addReading, updateReading, deleteReading, exportDatabaseToJson, analyzeJsonImport, persistImportedRecords, ImportAnalysisResult } from './db';
 import { jsPDF } from 'jspdf';
@@ -32,7 +31,20 @@ export default function App() {
   const [importAnalysis, setImportAnalysis] = useState<ImportAnalysisResult | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [isUtilitiesOpen, setIsUtilitiesOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isStorageDismissed, setIsStorageDismissed] = useState(() => localStorage.getItem('tensia_dismiss_persistence_banner') === 'true');
+  const utilitiesMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (utilitiesMenuRef.current && !utilitiesMenuRef.current.contains(event.target as Node)) {
+        setIsUtilitiesOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   async function handlePhotoAndListClick() {
     const apiKey = await getGeminiApiKey();
@@ -299,49 +311,110 @@ export default function App() {
             <Activity className="w-8 h-8" />
             <h1 className="text-2xl font-black">Tensia</h1>
           </div>
-          <button onClick={handleOpenNewModal} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-5 py-3 rounded-2xl flex items-center space-x-2 text-lg min-h-[48px]">
-            <Plus className="w-6 h-6" /> <span>Nueva Toma</span>
-          </button>
-        </div>
           <div className="flex items-center space-x-2">
-            <button 
-              onClick={() => setIsApiKeyModalOpen(true)} 
-              className="bg-sky-600 hover:bg-sky-800 text-white font-bold p-3 rounded-2xl flex items-center justify-center text-lg min-h-[48px] min-w-[48px] shadow"
-              title="Configurar Clave API de Gemini"
-              aria-label="Configurar Clave API de Gemini"
-            >
-              <Key className="w-6 h-6" />
-            </button>
             <button 
               onClick={handlePhotoAndListClick} 
               disabled={isAnalyzingPhoto}
-              className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold px-4 py-3 rounded-2xl flex items-center space-x-2 text-lg min-h-[48px] shadow"
+              className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold px-3.5 py-2.5 rounded-2xl flex items-center space-x-2 text-base min-h-[48px] shadow"
+              title="Foto y listo"
             >
-              {isAnalyzingPhoto ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
-              <span>{isAnalyzingPhoto ? 'Analizando...' : 'Foto y listo'}</span>
+              {isAnalyzingPhoto ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+              <span className="hidden sm:inline">{isAnalyzingPhoto ? 'Analizando...' : 'Foto y listo'}</span>
             </button>
-            <button onClick={handleOpenNewModal} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-5 py-3 rounded-2xl flex items-center space-x-2 text-lg min-h-[48px] shadow">
-              <Plus className="w-6 h-6" /> <span>Nueva Toma</span>
+            <button 
+              onClick={handleOpenNewModal} 
+              className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2.5 rounded-2xl flex items-center space-x-2 text-base min-h-[48px] shadow"
+              title="Nueva Toma"
+            >
+              <Plus className="w-5 h-5" /> <span className="hidden sm:inline">Nueva Toma</span>
             </button>
+            <button 
+              onClick={() => setIsApiKeyModalOpen(true)} 
+              className="bg-sky-600 hover:bg-sky-800 text-white font-bold p-2.5 rounded-2xl flex items-center justify-center min-h-[48px] min-w-[48px] shadow"
+              title="Configurar Clave API de Gemini"
+              aria-label="Configurar Clave API de Gemini"
+            >
+              <Key className="w-5 h-5" />
+            </button>
+            <div className="relative" ref={utilitiesMenuRef}>
+              <button 
+                onClick={() => setIsUtilitiesOpen(!isUtilitiesOpen)} 
+                className="bg-sky-600 hover:bg-sky-800 text-white font-bold p-2.5 rounded-2xl flex items-center justify-center min-h-[48px] min-w-[48px] shadow"
+                title="Más opciones (Herramientas auxiliares)"
+                aria-label="Más opciones"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+              {isUtilitiesOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-sky-100 py-2 z-30 text-slate-800">
+                  <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">Más opciones</div>
+                  <button 
+                    onClick={() => { generatePDF(); setIsUtilitiesOpen(false); }} 
+                    disabled={!readings.length}
+                    className="w-full text-left px-4 py-3 hover:bg-sky-50 flex items-space-between items-center space-x-3 text-slate-700 font-semibold disabled:opacity-40 min-h-[44px]"
+                  >
+                    <FileText className="w-5 h-5 text-sky-600"/><span>Exportar PDF</span>
+                  </button>
+                  <button 
+                    onClick={() => { handleShare(); setIsUtilitiesOpen(false); }} 
+                    disabled={!readings.length}
+                    className="w-full text-left px-4 py-3 hover:bg-sky-50 flex items-center space-x-3 text-slate-700 font-semibold disabled:opacity-40 min-h-[44px]"
+                  >
+                    <Share2 className="w-5 h-5 text-sky-600"/><span>Compartir Historial</span>
+                  </button>
+                  <button 
+                    onClick={() => { handleExportJson(); setIsUtilitiesOpen(false); }} 
+                    disabled={!readings.length}
+                    className="w-full text-left px-4 py-3 hover:bg-sky-50 flex items-center space-x-3 text-slate-700 font-semibold disabled:opacity-40 min-h-[44px]"
+                  >
+                    <Download className="w-5 h-5 text-sky-600"/><span>Backup (Exportar JSON)</span>
+                  </button>
+                  <button 
+                    onClick={() => { fileInputRef.current?.click(); setIsUtilitiesOpen(false); }} 
+                    className="w-full text-left px-4 py-3 hover:bg-sky-50 flex items-center space-x-3 text-slate-700 font-semibold min-h-[44px]"
+                  >
+                    <Upload className="w-5 h-5 text-sky-600"/><span>Importar JSON</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
+        </div>
       </header>
       <main className="max-w-3xl mx-auto px-4 pt-6 space-y-6">
         {successMsg && <div className="bg-emerald-100 text-emerald-900 p-3 rounded-xl font-bold flex items-center space-x-2"><CheckCircle2 className="w-6 h-6"/><span>{successMsg}</span></div>}
-        {isPersistent === false && (
-          <div className="bg-amber-100 text-amber-900 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow" role="status">
-            <div>
-              <span className="font-bold block">Active el almacenamiento persistente.</span>
-              {persistenceMessage && (
-                <p className="text-sm mt-1 text-amber-800">{persistenceMessage.text}</p>
-              )}
+        {isPersistent === false && !isStorageDismissed && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-900 p-3.5 rounded-2xl flex items-center justify-between gap-3 shadow-sm" role="status">
+            <div className="flex items-center space-x-3">
+              <span className="text-xl">💡</span>
+              <div>
+                <span className="font-bold text-sm block">Almacenamiento local protegido</span>
+                <p className="text-xs text-amber-800">Active el almacenamiento persistente para evitar la pérdida de datos del navegador.</p>
+                {persistenceMessage && (
+                  <p className="text-xs mt-1 text-amber-900 font-semibold">{persistenceMessage.text}</p>
+                )}
+              </div>
             </div>
-            <button 
-              onClick={handleRequestPersistence} 
-              disabled={isRequestingPersistence}
-              className="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-lg min-h-[44px] whitespace-nowrap"
-            >
-              {isRequestingPersistence ? 'Activando...' : 'Activar'}
-            </button>
+            <div className="flex items-center space-x-2">
+              <button 
+                onClick={handleRequestPersistence} 
+                disabled={isRequestingPersistence}
+                className="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold px-3 py-1.5 rounded-xl text-xs min-h-[38px] whitespace-nowrap shadow"
+              >
+                {isRequestingPersistence ? 'Activando...' : 'Activar'}
+              </button>
+              <button 
+                onClick={() => {
+                  setIsStorageDismissed(true);
+                  localStorage.setItem('tensia_dismiss_persistence_banner', 'true');
+                }}
+                className="text-amber-700 hover:text-amber-900 p-2 rounded-xl min-h-[38px] min-w-[38px] flex items-center justify-center"
+                title="Cerrar aviso"
+                aria-label="Cerrar aviso"
+              >
+                <X className="w-4 h-4"/>
+              </button>
+            </div>
           </div>
         )}
         {isPersistent === true && persistenceMessage && (
@@ -384,31 +457,83 @@ export default function App() {
               <button onClick={handleOpenNewModal} className="bg-emerald-500 text-white font-bold px-6 py-3 rounded-2xl min-h-[48px]">Registrar Toma</button>
             </div>
           ) : (
-            Object.entries(grouped).map(([date, list]) => (
-              <div key={date} className="space-y-3">
-                <h3 className="text-lg font-bold text-sky-900 bg-sky-200 px-4 py-2 rounded-xl">{date}</h3>
-                {list.map(r => {
-                  const cat = getCategory(r.systolic, r.diastolic);
-                  return (
-                    <div key={r.id} className="bg-white border-2 border-sky-100 rounded-3xl p-5 shadow-sm flex items-center justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-baseline space-x-3">
-                          <span className="text-3xl font-black">{r.systolic}/{r.diastolic}</span>
-                          <span className="text-sm font-semibold text-slate-500">mmHg</span>
-                          <span className={`text-xs px-2.5 py-1 rounded-full border font-bold ${cat.color}`}>{cat.label}</span>
-                        </div>
-                        <p className="text-sm text-slate-600">🕒 {new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {r.period} • Pulso: {r.pulse} lpm</p>
-                        {r.notes && <p className="text-sm bg-slate-50 p-2 rounded-xl text-slate-700 italic">💬 {r.notes}</p>}
-                      </div>
-                      <div className="flex space-x-2">
-                        <button onClick={() => handleOpenEditModal(r)} className="p-3 bg-sky-50 text-sky-700 rounded-xl min-h-[48px] min-w-[48px] flex items-center justify-center"><Edit2 className="w-5 h-5"/></button>
-                        <button onClick={() => r.id && handleDelete(r.id)} className="p-3 bg-rose-50 text-rose-700 rounded-xl min-h-[48px] min-w-[48px] flex items-center justify-center"><Trash2 className="w-5 h-5"/></button>
-                      </div>
+            Object.entries(grouped).map(([date, list]) => {
+              const morning = list.filter(r => r.period === 'Mañana');
+              const afternoonNight = list.filter(r => r.period === 'Tarde' || r.period === 'Noche');
+              const sortedRev = [...list].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+              return (
+                <div key={date} className="bg-white border-2 border-sky-100 rounded-3xl p-5 shadow-sm space-y-4">
+                  <h3 className="text-lg font-bold text-sky-900 bg-sky-100 px-4 py-2 rounded-xl">{date}</h3>
+                  <div className="hidden md:grid md:grid-cols-2 gap-4">
+                    <div className="space-y-3 bg-sky-50/50 p-4 rounded-2xl border border-sky-100">
+                      <div className="font-bold text-sky-900 text-sm border-b border-sky-200 pb-2">🌅 Mañana (06:00–11:59)</div>
+                      {!morning.length ? <p className="text-xs text-slate-400 italic py-2">Sin lecturas en la mañana</p> : morning.map(r => {
+                        const cat = getCategory(r.systolic, r.diastolic);
+                        return (
+                          <div key={r.id} className="bg-white border border-sky-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                            <div className="space-y-1">
+                              <div className="flex items-baseline space-x-2">
+                                <span className="text-xl font-black">{r.systolic}/{r.diastolic}</span>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${cat.color}`}>{cat.label}</span>
+                              </div>
+                              <p className="text-xs text-slate-600">🕒 {new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Pulso: {r.pulse} lpm</p>
+                            </div>
+                            <div className="flex space-x-1">
+                              <button onClick={() => handleOpenEditModal(r)} className="p-2 bg-sky-50 text-sky-700 rounded-xl"><Edit2 className="w-4 h-4"/></button>
+                              <button onClick={() => r.id && handleDelete(r.id)} className="p-2 bg-rose-50 text-rose-700 rounded-xl"><Trash2 className="w-4 h-4"/></button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
-            ))
+                    <div className="space-y-3 bg-amber-50/40 p-4 rounded-2xl border border-amber-100">
+                      <div className="font-bold text-amber-900 text-sm border-b border-amber-200 pb-2">🌇 Tarde & Noche (12:00–05:59)</div>
+                      {!afternoonNight.length ? <p className="text-xs text-slate-400 italic py-2">Sin lecturas en tarde/noche</p> : afternoonNight.map(r => {
+                        const cat = getCategory(r.systolic, r.diastolic);
+                        return (
+                          <div key={r.id} className="bg-white border border-amber-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                            <div className="space-y-1">
+                              <div className="flex items-baseline space-x-2">
+                                <span className="text-xl font-black">{r.systolic}/{r.diastolic}</span>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${cat.color}`}>{cat.label}</span>
+                                <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">{r.period}</span>
+                              </div>
+                              <p className="text-xs text-slate-600">🕒 {new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Pulso: {r.pulse} lpm</p>
+                            </div>
+                            <div className="flex space-x-1">
+                              <button onClick={() => handleOpenEditModal(r)} className="p-2 bg-sky-50 text-sky-700 rounded-xl"><Edit2 className="w-4 h-4"/></button>
+                              <button onClick={() => r.id && handleDelete(r.id)} className="p-2 bg-rose-50 text-rose-700 rounded-xl"><Trash2 className="w-4 h-4"/></button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="md:hidden space-y-3">
+                    {sortedRev.map(r => {
+                      const cat = getCategory(r.systolic, r.diastolic);
+                      return (
+                        <div key={r.id} className="bg-white border border-sky-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                          <div className="space-y-1">
+                            <div className="flex items-baseline space-x-2">
+                              <span className="text-2xl font-black">{r.systolic}/{r.diastolic}</span>
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${cat.color}`}>{cat.label}</span>
+                              <span className="text-[10px] bg-sky-100 text-sky-800 font-bold px-1.5 py-0.5 rounded">{r.period}</span>
+                            </div>
+                            <p className="text-xs text-slate-600">🕒 {new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • Pulso: {r.pulse} lpm</p>
+                          </div>
+                          <div className="flex space-x-1">
+                            <button onClick={() => handleOpenEditModal(r)} className="p-2 bg-sky-50 text-sky-700 rounded-xl"><Edit2 className="w-4 h-4"/></button>
+                            <button onClick={() => r.id && handleDelete(r.id)} className="p-2 bg-rose-50 text-rose-700 rounded-xl"><Trash2 className="w-4 h-4"/></button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })
           )}
         </section>
       </main>
