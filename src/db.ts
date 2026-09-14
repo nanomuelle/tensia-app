@@ -92,6 +92,123 @@ export async function importDatabaseFromJson(jsonString: string): Promise<number
   return data.length;
 }
 
+export interface ImportAnalysisResult {
+  totalInFile: number;
+  newValidRecords: Omit<BloodPressureRecord, 'id' | 'period'>[];
+  duplicatesCount: number;
+  invalidCount: number;
+}
+
+export async function analyzeJsonImport(jsonString: string): Promise<ImportAnalysisResult> {
+  let rawData: any;
+  try {
+    rawData = JSON.parse(jsonString);
+  } catch (err) {
+    throw new Error('El archivo no contiene un JSON válido.');
+  }
+
+  if (!Array.isArray(rawData)) {
+    throw new Error('El formato del archivo JSON no es válido (se esperaba una lista de lecturas).');
+  }
+
+  const existingReadings = await db.readings.toArray();
+
+  let duplicatesCount = 0;
+  let invalidCount = 0;
+  const newValidRecords: Omit<BloodPressureRecord, 'id' | 'period'>[] = [];
+  
+  // Track seen items within the file itself to prevent internal duplicate batch inserts
+  const seenInImport = new Set<string>();
+
+  for (const item of rawData) {
+    if (!item || typeof item !== 'object') {
+      invalidCount++;
+      continue;
+    }
+
+    const sys = parseInt(item.systolic, 10);
+    const dia = parseInt(diastolicValue(item), 10); // helper or item.diastolic
+    const pul = parseInt(item.pulse, 10);
+    const timestamp = item.timestamp;
+    const notes = typeof item.notes === 'string' ? item.notes.trim() : (item.notes || undefined);
+
+    // Validation rules as defined in manual entry
+    // systolic: 40-250, diastolic: 20-160, pulse: 10-250, timestamp valid
+    if (
+      isNaN(sys) || sys < 40 || sys > 250 ||
+      isNaN(dia) || dia < 20 || dia > 160 ||
+      isNaN(pul) || pul < 10 || pul > 250 ||
+      !timestamp || isNaN(new Date(timestamp).getTime())
+    ) {
+      invalidCount++;
+      continue;
+    }
+
+    const normalizedTimestamp = new Date(timestamp).toISOString();
+
+    // Deduplication key by exact values (excluding id): systolic, diastolic, pulse, timestamp, notes
+    const recordKey = `${sys}|${dia}|${pul}|${normalizedTimestamp}|${notes || ''}`;
+
+    if (seenInImport.has(recordKey)) {
+      duplicatesCount++;
+      continue;
+    }
+
+    // Check against existing database records
+    const isDuplicateExisting = existingReadings.some(ex => {
+      const exNotes = typeof ex.notes === 'string' ? ex.notes.trim() : (ex.notes || '');
+      const itemNotes = notes || '';
+      return (
+        ex.systolic === sys &&
+        ex.diastolic === dia &&
+        ex.pulse === pul &&
+        new Date(ex.timestamp).toISOString() === normalizedTimestamp &&
+        exNotes === itemNotes
+      );
+    });
+
+    if (isDuplicateExisting) {
+      duplicatesCount++;
+      continue;
+    }
+
+    seenInImport.add(recordKey);
+    newValidRecords.push({
+      systolic: sys,
+      diastolic: dia,
+      pulse: pul,
+      timestamp: normalizedTimestamp,
+      notes: notes || undefined
+    });
+  }
+
+  return {
+    totalInFile: rawData.length,
+    newValidRecords,
+    duplicatesCount,
+    invalidCount
+  };
+}
+
+function diastolicValue(item: any): any {
+  return item.diastolic;
+}
+
+export async function persistImportedRecords(records: Omit<BloodPressureRecord, 'id' | 'period'>[]): Promise<number> {
+  if (records.length === 0) return 0;
+  await db.transaction('rw', db.readings, async () => {
+    for (const rec of records) {
+      const date = new Date(rec.timestamp);
+      const period = getPeriod(date);
+      await db.readings.add({
+        ...rec,
+        period
+      });
+    }
+  });
+  return records.length;
+}
+
 export async function exportDatabaseToJson(): Promise<string> {
   const all = await db.readings.toArray();
   return JSON.stringify(all, null, 2);

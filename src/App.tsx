@@ -7,7 +7,7 @@ import { getGeminiApiKey } from './db';
 import { compressImage, analyzeBloodPressureImage } from './services/gemini';
 import { Key, Camera, Loader2 } from 'lucide-react';
 
-import { BloodPressureRecord, getAllReadings, addReading, updateReading, deleteReading, exportDatabaseToJson, importDatabaseFromJson } from './db';
+import { BloodPressureRecord, getAllReadings, addReading, updateReading, deleteReading, exportDatabaseToJson, analyzeJsonImport, persistImportedRecords, ImportAnalysisResult } from './db';
 import { jsPDF } from 'jspdf';
 
 export default function App() {
@@ -29,6 +29,10 @@ export default function App() {
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [importAnalysis, setImportAnalysis] = useState<ImportAnalysisResult | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   async function handlePhotoAndListClick() {
     const apiKey = await getGeminiApiKey();
@@ -228,12 +232,46 @@ export default function App() {
     const reader = new FileReader();
     reader.onload = async (ev) => {
       try {
-        await importDatabaseFromJson(ev.target?.result as string);
-        setSuccessMsg('¡Copia restaurada con éxito!');
-        loadData();
-      } catch (err) { alert('Error al importar'); }
+        const text = ev.target?.result as string;
+        const analysis = await analyzeJsonImport(text);
+        setImportAnalysis(analysis);
+        setIsImportModalOpen(true);
+      } catch (err: any) {
+        alert(err.message || 'Error al procesar el archivo JSON.');
+      } finally {
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    };
+    reader.onerror = () => {
+      alert('Error al leer el archivo.');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     };
     reader.readAsText(file);
+  }
+
+  async function confirmAndExecuteImport() {
+    if (!importAnalysis || importAnalysis.newValidRecords.length === 0) {
+      setIsImportModalOpen(false);
+      return;
+    }
+    setIsImporting(true);
+    try {
+      const addedCount = await persistImportedRecords(importAnalysis.newValidRecords);
+      setSuccessMsg(`¡Se han importado ${addedCount} lecturas nuevas con éxito!`);
+      loadData();
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error al guardar las lecturas importadas.');
+      setTimeout(() => setErrorMsg(null), 4000);
+    } finally {
+      setIsImporting(false);
+      setIsImportModalOpen(false);
+      setImportAnalysis(null);
+    }
   }
 
   async function handleShare() {
@@ -321,10 +359,19 @@ export default function App() {
           <button onClick={handleShare} disabled={!readings.length} className="bg-white p-3 rounded-2xl border-2 border-sky-200 font-bold text-sky-900 flex flex-col items-center disabled:opacity-50 min-h-[56px]"><Share2 className="w-6 h-6 text-sky-700 mb-1"/>Compartir</button>
           <button onClick={handleExportJson} disabled={!readings.length} className="bg-white p-3 rounded-2xl border-2 border-sky-200 font-bold text-sky-900 flex flex-col items-center disabled:opacity-50 min-h-[56px]"><Download className="w-6 h-6 text-sky-700 mb-1"/>Backup</button>
           <div className="relative flex flex-col items-center">
-            <button disabled className="w-full h-full bg-slate-100 p-3 rounded-2xl border-2 border-slate-200 font-bold text-slate-400 flex flex-col items-center justify-center opacity-70 cursor-not-allowed min-h-[56px]">
-              <Upload className="w-6 h-6 text-slate-400 mb-1"/>Restaurar
+            <input 
+              type="file" 
+              accept=".json,application/json" 
+              ref={fileInputRef} 
+              onChange={handleImportJson} 
+              className="hidden" 
+            />
+            <button 
+              onClick={() => fileInputRef.current?.click()} 
+              className="w-full h-full bg-white p-3 rounded-2xl border-2 border-sky-200 font-bold text-sky-900 flex flex-col items-center justify-center hover:bg-sky-50 min-h-[56px] cursor-pointer shadow-sm"
+            >
+              <Upload className="w-6 h-6 text-sky-700 mb-1"/>Importar
             </button>
-            <span className="absolute -bottom-5 text-[10px] text-slate-500 font-bold whitespace-nowrap">Disponible próximamente</span>
           </div>
         </div>
         <div className="pt-3"></div>
@@ -404,6 +451,65 @@ export default function App() {
           </div>
         </div>
       )}
+      {isImportModalOpen && importAnalysis && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl">
+            <div className="flex justify-between items-center border-b pb-4">
+              <h3 className="text-2xl font-black text-slate-800">Resumen de Importación</h3>
+              <button onClick={() => { setIsImportModalOpen(false); setImportAnalysis(null); }} className="p-2 min-h-[48px] min-w-[48px] flex items-center justify-center"><X className="w-6 h-6"/></button>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-slate-600 text-base">
+                Se ha analizado el archivo de copia de seguridad. Revise el resumen antes de fusionar los datos en la base de datos:
+              </p>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-sky-50 border-2 border-sky-200 p-4 rounded-2xl text-center">
+                  <span className="block text-3xl font-black text-sky-900">{importAnalysis.newValidRecords.length}</span>
+                  <span className="text-sm font-bold text-sky-700">Nuevas a importar</span>
+                </div>
+                <div className="bg-slate-50 border-2 border-slate-200 p-4 rounded-2xl text-center">
+                  <span className="block text-3xl font-black text-slate-700">{importAnalysis.duplicatesCount}</span>
+                  <span className="text-sm font-bold text-slate-500">Duplicados omitidos</span>
+                </div>
+              </div>
+
+              {importAnalysis.invalidCount > 0 && (
+                <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded-2xl flex items-center justify-between">
+                  <span className="font-bold text-amber-900">Registros inválidos descartados:</span>
+                  <span className="text-xl font-black text-amber-800">{importAnalysis.invalidCount}</span>
+                </div>
+              )}
+
+              <div className="bg-slate-50 p-4 rounded-2xl text-sm text-slate-600 space-y-1">
+                <p>• Total en el fichero: <strong>{importAnalysis.totalInFile}</strong></p>
+                <p>• Los duplicados exactos y registros inválidos no sobrescribirán ni afectarán a sus datos existentes.</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t">
+              <button 
+                type="button" 
+                onClick={() => { setIsImportModalOpen(false); setImportAnalysis(null); }} 
+                className="px-6 py-3 bg-slate-200 hover:bg-slate-300 font-bold rounded-2xl min-h-[48px]"
+                disabled={isImporting}
+              >
+                Cancelar
+              </button>
+              <button 
+                type="button" 
+                onClick={confirmAndExecuteImport} 
+                disabled={isImporting || importAnalysis.newValidRecords.length === 0}
+                className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold rounded-2xl shadow min-h-[48px]"
+              >
+                {isImporting ? 'Importando...' : 'Confirmar e Importar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ApiKeyModal 
         isOpen={isApiKeyModalOpen} 
         onClose={() => setIsApiKeyModalOpen(false)} 
