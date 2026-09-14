@@ -23,10 +23,10 @@ El sistema SHALL permitir tomar una foto con la cámara o seleccionar una imagen
 - **THEN** la imagen se carga para su procesamiento visual.
 
 ### Requirement: Procesamiento visual con Gemini Vision
-El sistema SHALL enviar la imagen capturada directamente a la API de Gemini Vision usando la clave local con un prompt estructurado para extraer sistólica, diastólica y pulso.
+El sistema SHALL enviar la imagen capturada y comprimida directamente a la API de Gemini Vision usando la clave local con un prompt estructurado para extraer sistólica, diastólica y pulso en formato JSON.
 
 #### Scenario: Extracción exitosa
-- **WHEN** la API de Gemini analiza la imagen y devuelve valores estructurados válidos
+- **WHEN** la API de Gemini analiza la imagen y devuelve valores estructurados válidos (`systolic`, `diastolic`, `pulse`)
 - **THEN** se presentan los valores extraídos en la pantalla de confirmación.
 
 #### Scenario: Fallo de análisis o interpretación
