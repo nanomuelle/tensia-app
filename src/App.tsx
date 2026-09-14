@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Heart, Calendar, FileText, Download, Upload, Share2, Trash2, Edit2, CheckCircle2, X, Activity } from 'lucide-react';
+import { ApiKeyModal } from './components/ApiKeyModal';
+import { PrivacyModal } from './components/PrivacyModal';
+import { PhotoCaptureModal } from './components/PhotoCaptureModal';
+import { getGeminiApiKey } from './db';
+import { compressImage, analyzeBloodPressureImage } from './services/gemini';
+import { Key, Camera, Loader2 } from 'lucide-react';
+
 import { BloodPressureRecord, getAllReadings, addReading, updateReading, deleteReading, exportDatabaseToJson, importDatabaseFromJson } from './db';
 import { jsPDF } from 'jspdf';
 
@@ -17,6 +24,62 @@ export default function App() {
   const [isPersistent, setIsPersistent] = useState<boolean | null>(null);
   const [isRequestingPersistence, setIsRequestingPersistence] = useState(false);
   const [persistenceMessage, setPersistenceMessage] = useState<{ text: string; type: 'success' | 'warning' | 'info' | 'error' } | null>(null);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+
+  async function handlePhotoAndListClick() {
+    const apiKey = await getGeminiApiKey();
+    if (!apiKey) {
+      setIsApiKeyModalOpen(true);
+      return;
+    }
+    const privacyAccepted = localStorage.getItem('tensia_privacy_accepted');
+    if (!privacyAccepted) {
+      setIsPrivacyModalOpen(true);
+      return;
+    }
+    setIsPhotoModalOpen(true);
+  }
+
+  function handlePrivacyAccepted() {
+    localStorage.setItem('tensia_privacy_accepted', 'true');
+    setIsPrivacyModalOpen(false);
+    setIsPhotoModalOpen(true);
+  }
+
+  async function handleImageSelected(fileOrBlob: File | Blob) {
+    setIsAnalyzingPhoto(true);
+    setAnalysisError(null);
+    try {
+      const apiKey = await getGeminiApiKey();
+      if (!apiKey) {
+        setIsApiKeyModalOpen(true);
+        setIsAnalyzingPhoto(false);
+        return;
+      }
+      const compressedBase64 = await compressImage(fileOrBlob);
+      const result = await analyzeBloodPressureImage(apiKey, compressedBase64);
+      
+      setEditingId(null);
+      setSystolic(result.systolic.toString());
+      setDiastolic(result.diastolic.toString());
+      setPulse(result.pulse.toString());
+      setTimestamp(toLocalDateTimeString(new Date()));
+      setNotes('Capturado con foto y Gemini AI');
+      setErrorMsg(null);
+      setIsModalOpen(true);
+    } catch (err: any) {
+      setAnalysisError(err.message || 'Error al analizar la imagen con Gemini.');
+      setErrorMsg(err.message || 'Error al analizar la imagen con Gemini.');
+      setIsModalOpen(true);
+    } finally {
+      setIsAnalyzingPhoto(false);
+    }
+  }
+
 
   useEffect(() => {
     loadData();
@@ -202,6 +265,27 @@ export default function App() {
             <Plus className="w-6 h-6" /> <span>Nueva Toma</span>
           </button>
         </div>
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={() => setIsApiKeyModalOpen(true)} 
+              className="bg-sky-600 hover:bg-sky-800 text-white font-bold p-3 rounded-2xl flex items-center justify-center text-lg min-h-[48px] min-w-[48px] shadow"
+              title="Configurar Clave API de Gemini"
+              aria-label="Configurar Clave API de Gemini"
+            >
+              <Key className="w-6 h-6" />
+            </button>
+            <button 
+              onClick={handlePhotoAndListClick} 
+              disabled={isAnalyzingPhoto}
+              className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold px-4 py-3 rounded-2xl flex items-center space-x-2 text-lg min-h-[48px] shadow"
+            >
+              {isAnalyzingPhoto ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
+              <span>{isAnalyzingPhoto ? 'Analizando...' : 'Foto y listo'}</span>
+            </button>
+            <button onClick={handleOpenNewModal} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-5 py-3 rounded-2xl flex items-center space-x-2 text-lg min-h-[48px] shadow">
+              <Plus className="w-6 h-6" /> <span>Nueva Toma</span>
+            </button>
+          </div>
       </header>
       <main className="max-w-3xl mx-auto px-4 pt-6 space-y-6">
         {successMsg && <div className="bg-emerald-100 text-emerald-900 p-3 rounded-xl font-bold flex items-center space-x-2"><CheckCircle2 className="w-6 h-6"/><span>{successMsg}</span></div>}
@@ -320,6 +404,21 @@ export default function App() {
           </div>
         </div>
       )}
+      <ApiKeyModal 
+        isOpen={isApiKeyModalOpen} 
+        onClose={() => setIsApiKeyModalOpen(false)} 
+        onSaved={() => setSuccessMsg('¡Clave de API guardada correctamente!')}
+      />
+      <PrivacyModal 
+        isOpen={isPrivacyModalOpen} 
+        onAccept={handlePrivacyAccepted} 
+        onCancel={() => setIsPrivacyModalOpen(false)} 
+      />
+      <PhotoCaptureModal 
+        isOpen={isPhotoModalOpen} 
+        onClose={() => setIsPhotoModalOpen(false)} 
+        onImageSelected={handleImageSelected} 
+      />
     </div>
   );
 }

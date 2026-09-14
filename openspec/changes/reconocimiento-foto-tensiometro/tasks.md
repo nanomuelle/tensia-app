@@ -11,9 +11,9 @@
 
 ## 3. Componentes de Interfaz de Usuario y Privacidad
 
-- [ ] 3.1 Crear el modal de configuración de la clave API de Gemini in `src/components/ApiKeyModal.tsx` con campo de clave, botón de test y guardado.
-- [ ] 3.2 Implementar el aviso de privacidad de IA en el primer uso al pulsar "Foto y listo" con confirmación de aceptación.
-- [ ] 3.3 Crear el modal de captura/selección de foto (`PhotoCaptureModal.tsx`) y previsualización/confirmación editable o integrado en el flujo de alta de lectura.
+- [x] 3.1 Crear el modal de configuración de la clave API de Gemini in `src/components/ApiKeyModal.tsx` con campo de clave, botón de test y guardado.
+- [x] 3.2 Implementar el aviso de privacidad de IA en el primer uso al pulsar "Foto y listo" con confirmación de aceptación.
+- [x] 3.3 Crear el modal de captura/selección de foto (`PhotoCaptureModal.tsx`) y previsualización/confirmación editable o integrado en el flujo de alta de lectura.
 
 ## 4. Integración y Validación End-to-End
 
