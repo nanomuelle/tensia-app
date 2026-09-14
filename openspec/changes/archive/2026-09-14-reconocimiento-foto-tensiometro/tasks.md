@@ -17,5 +17,5 @@
 
 ## 4. Integración y Validación End-to-End
 
-- [ ] 4.1 Integrar el botón "Foto y listo" y el acceso a la configuración de la API en `src/App.tsx`, conectándolo con las validaciones de rango existentes.
-- [ ] 4.2 Verificar el flujo completo (configuración de clave -> foto -> compresión -> extracción -> edición/confirmación -> guardado en histórico) y comprobar que pasa todos los escenarios de especificación.
+- [x] 4.1 Integrar el botón "Foto y listo" y el acceso a la configuración de la API en `src/App.tsx`, conectándolo con las validaciones de rango existentes.
+- [x] 4.2 Verificar el flujo completo (configuración de clave -> foto -> compresión -> extracción -> edición/confirmación -> guardado en histórico) y comprobar que pasa todos los escenarios de especificación.
