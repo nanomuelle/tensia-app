@@ -5,9 +5,9 @@
 
 ## 2. Cliente de Gemini Vision y Servicio de OCR
 
-- [ ] 2.1 Redimensionar y comprimir la imagen capturada (máx. 1024px, JPEG ~0.8 calidad) antes de convertirla a base64 para el envío a Gemini.
-- [ ] 2.2 Crear el servicio `src/services/gemini.ts` con la función de llamada REST directa a Gemini Vision usando `fetch` y validación de respuesta estructurada en JSON (`systolic`, `diastolic`, `pulse`).
-- [ ] 2.3 Implementar la función de prueba de API key en `src/services/gemini.ts` y verificar que devuelve éxito ante una clave válida y error descriptivo ante una inválida.
+- [x] 2.1 Redimensionar y comprimir la imagen capturada (máx. 1024px, JPEG ~0.8 calidad) antes de convertirla a base64 para el envío a Gemini.
+- [x] 2.2 Crear el servicio `src/services/gemini.ts` con la función de llamada REST directa a Gemini Vision usando `fetch` y validación de respuesta estructurada en JSON (`systolic`, `diastolic`, `pulse`).
+- [x] 2.3 Implementar la función de prueba de API key en `src/services/gemini.ts` y verificar que devuelve éxito ante una clave válida y error descriptivo ante una inválida.
 
 ## 3. Componentes de Interfaz de Usuario y Privacidad
 
