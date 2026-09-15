@@ -49,13 +49,9 @@ export function useReadings() {
   return {
     readings,
     loadReadings,
-    loadData: loadReadings,
     addReading,
     updateReading,
     deleteReading,
-    handleAddReading: addReading,
-    handleUpdateReading: updateReading,
-    handleDeleteReading: deleteReading,
   };
 }
 

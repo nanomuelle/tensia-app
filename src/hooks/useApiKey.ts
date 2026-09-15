@@ -9,7 +9,6 @@ export interface ApiKeyTestResult {
 
 export function useApiKey() {
   const [apiKey, setApiKey] = useState('');
-  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<ApiKeyTestResult | null>(null);
@@ -78,24 +77,9 @@ export function useApiKey() {
     }
   }, []);
 
-  const openApiKeyModal = useCallback(() => {
-    setTestResult(null);
-    setShowKey(false);
-    loadApiKey();
-    setIsApiKeyModalOpen(true);
-  }, [loadApiKey]);
-
-  const closeApiKeyModal = useCallback(() => {
-    setIsApiKeyModalOpen(false);
-  }, []);
-
   return {
     apiKey,
     setApiKey,
-    isApiKeyModalOpen,
-    setIsApiKeyModalOpen,
-    openApiKeyModal,
-    closeApiKeyModal,
     loading,
     setLoading,
     testing,

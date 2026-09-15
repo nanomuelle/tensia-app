@@ -12,7 +12,6 @@ import { ImportSummaryModal } from './components/ImportSummaryModal';
 
 import { useReadings } from './hooks/useReadings';
 import { useStoragePersistence } from './hooks/useStoragePersistence';
-import { useApiKey } from './hooks/useApiKey';
 import { useBackupImport } from './hooks/useBackupImport';
 import { useGeminiAI } from './hooks/useGeminiAI';
 
@@ -40,11 +39,9 @@ export default function App() {
     dismissBanner,
   } = useStoragePersistence();
 
-  const {
-    isApiKeyModalOpen,
-    openApiKeyModal,
-    closeApiKeyModal,
-  } = useApiKey();
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const openApiKeyModal = () => setIsApiKeyModalOpen(true);
+  const closeApiKeyModal = () => setIsApiKeyModalOpen(false);
 
   const {
     importAnalysis,

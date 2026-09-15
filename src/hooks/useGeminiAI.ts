@@ -6,7 +6,6 @@ export function useGeminiAI() {
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   const handlePhotoAndListClick = useCallback(async (onRequireApiKey?: () => void) => {
     const apiKey = await getGeminiApiKey();
@@ -40,7 +39,6 @@ export function useGeminiAI() {
       }
     ) => {
       setIsAnalyzingPhoto(true);
-      setAnalysisError(null);
       try {
         const apiKey = await getGeminiApiKey();
         if (!apiKey) {
@@ -55,7 +53,6 @@ export function useGeminiAI() {
         options.onResult(result);
       } catch (err: any) {
         const message = err.message || 'Error al analizar la imagen con Gemini.';
-        setAnalysisError(message);
         if (options.onError) {
           options.onError(message);
         }
@@ -80,8 +77,6 @@ export function useGeminiAI() {
     isPhotoModalOpen,
     setIsPhotoModalOpen,
     isAnalyzingPhoto,
-    analysisError,
-    setAnalysisError,
     handlePhotoAndListClick,
     handlePrivacyAccepted,
     handleImageSelected,
