@@ -6,7 +6,19 @@ import { PhotoCaptureModal } from './components/PhotoCaptureModal';
 import { getGeminiApiKey } from './db';
 import { compressImage, analyzeBloodPressureImage } from './services/gemini';
 
-import { BloodPressureRecord, getAllReadings, addReading, updateReading, deleteReading, exportDatabaseToJson, analyzeJsonImport, persistImportedRecords, ImportAnalysisResult } from './db';
+import {
+  BloodPressureRecord,
+  getAllReadings,
+  addReading,
+  updateReading,
+  deleteReading,
+  exportDatabaseToJson,
+  analyzeJsonImport,
+  persistImportedRecords,
+  ImportAnalysisResult,
+  getCategory,
+  validateReading,
+} from './services/readingsService';
 import { jsPDF } from 'jspdf';
 
 export default function App() {
@@ -178,9 +190,11 @@ export default function App() {
     const dia = parseInt(diastolic, 10);
     const pul = parseInt(pulse, 10);
 
-    if (isNaN(sys) || sys < 40 || sys > 250) { setErrorMsg('Sistólica entre 40 y 250.'); return; }
-    if (isNaN(dia) || dia < 20 || dia > 160) { setErrorMsg('Diastólica entre 20 y 160.'); return; }
-    if (isNaN(pul) || pul < 10 || pul > 250) { setErrorMsg('Pulso entre 10 y 250.'); return; }
+    const validation = validateReading(sys, dia, pul);
+    if (!validation.isValid) {
+      setErrorMsg(validation.error!);
+      return;
+    }
 
     const isoDate = new Date(timestamp).toISOString();
     if (editingId) {
@@ -202,15 +216,6 @@ export default function App() {
       loadData();
       setTimeout(() => setSuccessMsg(null), 3000);
     }
-  }
-
-  function getCategory(sys: number, dia: number) {
-    if (sys < 120 && dia < 80) return { label: 'Óptima', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
-    if (sys <= 129 && dia <= 84) return { label: 'Normal', color: 'bg-green-100 text-green-800 border-green-300' };
-    if (sys <= 139 || dia <= 89) return { label: 'Normal-Alta', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' };
-    if (sys <= 159 || dia <= 99) return { label: 'Grado 1', color: 'bg-orange-100 text-orange-800 border-orange-300' };
-    if (sys <= 179 || dia <= 109) return { label: 'Grado 2', color: 'bg-red-100 text-red-800 border-red-300' };
-    return { label: 'Grado 3', color: 'bg-rose-200 text-rose-900 border-rose-400 font-bold' };
   }
 
   function generatePDF() {
