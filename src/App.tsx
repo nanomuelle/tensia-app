@@ -19,7 +19,7 @@ import {
   getCategory,
   validateReading,
 } from './services/readingsService';
-import { jsPDF } from 'jspdf';
+import { generateReadingsPDF } from './services/pdfService';
 
 export default function App() {
   const [readings, setReadings] = useState<BloodPressureRecord[]>([]);
@@ -218,21 +218,6 @@ export default function App() {
     }
   }
 
-  function generatePDF() {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("Tensia - Informe de Tensión", 14, 20);
-    doc.setFontSize(11);
-    doc.text(`Fecha: ${new Date().toLocaleDateString()} | Total: ${readings.length}`, 14, 28);
-    let y = 38;
-    readings.forEach(r => {
-      if (y > 270) { doc.addPage(); y = 20; }
-      doc.text(`${new Date(r.timestamp).toLocaleString()} - ${r.period}: ${r.systolic}/${r.diastolic} mmHg (Pulso: ${r.pulse})`, 14, y);
-      y += 8;
-    });
-    doc.save(`Tensia-Informe.pdf`);
-  }
-
   async function handleExportJson() {
     const jsonStr = await exportDatabaseToJson();
     const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -354,7 +339,7 @@ export default function App() {
                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-sky-100 py-2 z-30 text-slate-800">
                   <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">Más opciones</div>
                   <button 
-                    onClick={() => { generatePDF(); setIsUtilitiesOpen(false); }} 
+                    onClick={() => { generateReadingsPDF(readings); setIsUtilitiesOpen(false); }} 
                     disabled={!readings.length}
                     className="w-full text-left px-4 py-3 hover:bg-sky-50 flex items-space-between items-center space-x-3 text-slate-700 font-semibold disabled:opacity-40 min-h-[44px]"
                   >
@@ -433,7 +418,7 @@ export default function App() {
           </div>
         )}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <button onClick={generatePDF} disabled={!readings.length} className="bg-white p-3 rounded-2xl border-2 border-sky-200 font-bold text-sky-900 flex flex-col items-center disabled:opacity-50 min-h-[56px]"><FileText className="w-6 h-6 text-sky-700 mb-1"/>PDF</button>
+          <button onClick={() => generateReadingsPDF(readings)} disabled={!readings.length} className="bg-white p-3 rounded-2xl border-2 border-sky-200 font-bold text-sky-900 flex flex-col items-center disabled:opacity-50 min-h-[56px]"><FileText className="w-6 h-6 text-sky-700 mb-1"/>PDF</button>
           <button onClick={handleShare} disabled={!readings.length} className="bg-white p-3 rounded-2xl border-2 border-sky-200 font-bold text-sky-900 flex flex-col items-center disabled:opacity-50 min-h-[56px]"><Share2 className="w-6 h-6 text-sky-700 mb-1"/>Compartir</button>
           <button onClick={handleExportJson} disabled={!readings.length} className="bg-white p-3 rounded-2xl border-2 border-sky-200 font-bold text-sky-900 flex flex-col items-center disabled:opacity-50 min-h-[56px]"><Download className="w-6 h-6 text-sky-700 mb-1"/>Backup</button>
           <div className="relative flex flex-col items-center">
