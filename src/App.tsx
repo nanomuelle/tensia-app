@@ -1,9 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Plus, FileText, Download, Upload, Share2, CheckCircle2, X, Activity, MoreVertical, Key, Camera, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, CheckCircle2, Activity, Key, Camera, Loader2 } from 'lucide-react';
 import { ApiKeyModal } from './components/ApiKeyModal';
 import { PrivacyModal } from './components/PrivacyModal';
 import { PhotoCaptureModal } from './components/PhotoCaptureModal';
 import { ReadingsHistory } from './components/ReadingsHistory';
+import { StorageBanner } from './components/StorageBanner';
+import { UtilitiesMenu } from './components/UtilitiesMenu';
+import { QuickActionsBar } from './components/QuickActionsBar';
+import { ReadingModal } from './components/ReadingModal';
+import { ImportSummaryModal } from './components/ImportSummaryModal';
 
 import { useReadings } from './hooks/useReadings';
 import { useStoragePersistence } from './hooks/useStoragePersistence';
@@ -72,18 +77,6 @@ export default function App() {
   const [notes, setNotes] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [isUtilitiesOpen, setIsUtilitiesOpen] = useState(false);
-  const utilitiesMenuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (utilitiesMenuRef.current && !utilitiesMenuRef.current.contains(event.target as Node)) {
-        setIsUtilitiesOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   async function handlePhotoAndListClick() {
     await photoAndListClick(openApiKeyModal);
@@ -227,114 +220,34 @@ export default function App() {
             >
               <Key className="w-5 h-5" />
             </button>
-            <div className="relative" ref={utilitiesMenuRef}>
-              <button 
-                onClick={() => setIsUtilitiesOpen(!isUtilitiesOpen)} 
-                className="bg-sky-600 hover:bg-sky-800 text-white font-bold p-2.5 rounded-2xl flex items-center justify-center min-h-[48px] min-w-[48px] shadow"
-                title="Más opciones (Herramientas auxiliares)"
-                aria-label="Más opciones"
-              >
-                <MoreVertical className="w-5 h-5" />
-              </button>
-              {isUtilitiesOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-sky-100 py-2 z-30 text-slate-800">
-                  <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">Más opciones</div>
-                  <button 
-                    onClick={() => { generateReadingsPDF(readings); setIsUtilitiesOpen(false); }} 
-                    disabled={!readings.length}
-                    className="w-full text-left px-4 py-3 hover:bg-sky-50 flex items-space-between items-center space-x-3 text-slate-700 font-semibold disabled:opacity-40 min-h-[44px]"
-                  >
-                    <FileText className="w-5 h-5 text-sky-600"/><span>Exportar PDF</span>
-                  </button>
-                  <button 
-                    onClick={() => { handleShare(); setIsUtilitiesOpen(false); }} 
-                    disabled={!readings.length}
-                    className="w-full text-left px-4 py-3 hover:bg-sky-50 flex items-center space-x-3 text-slate-700 font-semibold disabled:opacity-40 min-h-[44px]"
-                  >
-                    <Share2 className="w-5 h-5 text-sky-600"/><span>Compartir Historial</span>
-                  </button>
-                  <button 
-                    onClick={() => { handleExportJson(); setIsUtilitiesOpen(false); }} 
-                    disabled={!readings.length}
-                    className="w-full text-left px-4 py-3 hover:bg-sky-50 flex items-center space-x-3 text-slate-700 font-semibold disabled:opacity-40 min-h-[44px]"
-                  >
-                    <Download className="w-5 h-5 text-sky-600"/><span>Backup (Exportar JSON)</span>
-                  </button>
-                  <button 
-                    onClick={() => { fileInputRef.current?.click(); setIsUtilitiesOpen(false); }} 
-                    className="w-full text-left px-4 py-3 hover:bg-sky-50 flex items-center space-x-3 text-slate-700 font-semibold min-h-[44px]"
-                  >
-                    <Upload className="w-5 h-5 text-sky-600"/><span>Importar JSON</span>
-                  </button>
-                </div>
-              )}
-            </div>
+            <UtilitiesMenu
+              hasReadings={readings.length > 0}
+              onExportPDF={() => generateReadingsPDF(readings)}
+              onShare={handleShare}
+              onExportBackup={handleExportJson}
+              onImportClick={() => fileInputRef.current?.click()}
+            />
           </div>
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-4 pt-6 space-y-6">
         {successMsg && <div className="bg-emerald-100 text-emerald-900 p-3 rounded-xl font-bold flex items-center space-x-2"><CheckCircle2 className="w-6 h-6"/><span>{successMsg}</span></div>}
-        {isPersistent === false && !isStorageDismissed && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-900 p-3.5 rounded-2xl flex items-center justify-between gap-3 shadow-sm" role="status">
-            <div className="flex items-center space-x-3">
-              <span className="text-xl">💡</span>
-              <div>
-                <span className="font-bold text-sm block">Almacenamiento local protegido</span>
-                <p className="text-xs text-amber-800">Active el almacenamiento persistente para evitar la pérdida de datos del navegador.</p>
-                {persistenceMessage && (
-                  <p className="text-xs mt-1 text-amber-900 font-semibold">{persistenceMessage.text}</p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button 
-                onClick={handleRequestPersistence} 
-                disabled={isRequestingPersistence}
-                className="bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold px-3 py-1.5 rounded-xl text-xs min-h-[38px] whitespace-nowrap shadow"
-              >
-                {isRequestingPersistence ? 'Activando...' : 'Activar'}
-              </button>
-              <button 
-                onClick={dismissBanner}
-                className="text-amber-700 hover:text-amber-900 p-2 rounded-xl min-h-[38px] min-w-[38px] flex items-center justify-center"
-                title="Cerrar aviso"
-                aria-label="Cerrar aviso"
-              >
-                <X className="w-4 h-4"/>
-              </button>
-            </div>
-          </div>
-        )}
-        {isPersistent === true && persistenceMessage && (
-          <div className="bg-emerald-100 text-emerald-900 p-4 rounded-xl shadow" role="status">
-            <p className="font-bold">{persistenceMessage.text}</p>
-          </div>
-        )}
-        {persistenceMessage && isPersistent !== false && isPersistent !== true && (
-          <div className="bg-slate-100 text-slate-900 p-4 rounded-xl shadow" role="status">
-            <p className="font-bold">{persistenceMessage.text}</p>
-          </div>
-        )}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <button onClick={() => generateReadingsPDF(readings)} disabled={!readings.length} className="bg-white p-3 rounded-2xl border-2 border-sky-200 font-bold text-sky-900 flex flex-col items-center disabled:opacity-50 min-h-[56px]"><FileText className="w-6 h-6 text-sky-700 mb-1"/>PDF</button>
-          <button onClick={handleShare} disabled={!readings.length} className="bg-white p-3 rounded-2xl border-2 border-sky-200 font-bold text-sky-900 flex flex-col items-center disabled:opacity-50 min-h-[56px]"><Share2 className="w-6 h-6 text-sky-700 mb-1"/>Compartir</button>
-          <button onClick={handleExportJson} disabled={!readings.length} className="bg-white p-3 rounded-2xl border-2 border-sky-200 font-bold text-sky-900 flex flex-col items-center disabled:opacity-50 min-h-[56px]"><Download className="w-6 h-6 text-sky-700 mb-1"/>Backup</button>
-          <div className="relative flex flex-col items-center">
-            <input 
-              type="file" 
-              accept=".json,application/json" 
-              ref={fileInputRef} 
-              onChange={handleImportJson} 
-              className="hidden" 
-            />
-            <button 
-              onClick={() => fileInputRef.current?.click()} 
-              className="w-full h-full bg-white p-3 rounded-2xl border-2 border-sky-200 font-bold text-sky-900 flex flex-col items-center justify-center hover:bg-sky-50 min-h-[56px] cursor-pointer shadow-sm"
-            >
-              <Upload className="w-6 h-6 text-sky-700 mb-1"/>Importar
-            </button>
-          </div>
-        </div>
+        <StorageBanner
+          isPersistent={isPersistent}
+          isStorageDismissed={isStorageDismissed}
+          isRequestingPersistence={isRequestingPersistence}
+          persistenceMessage={persistenceMessage}
+          onRequestPersistence={handleRequestPersistence}
+          onDismiss={dismissBanner}
+        />
+        <QuickActionsBar
+          hasReadings={readings.length > 0}
+          onExportPDF={() => generateReadingsPDF(readings)}
+          onShare={handleShare}
+          onExportBackup={handleExportJson}
+          onImportJson={handleImportJson}
+          fileInputRef={fileInputRef}
+        />
         <div className="pt-3"></div>
         <ReadingsHistory
           readings={readings}
@@ -343,103 +256,30 @@ export default function App() {
           onAddNew={handleOpenNewModal}
         />
       </main>
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl">
-            <div className="flex justify-between items-center border-b pb-4">
-              <h3 className="text-2xl font-black">{editingId ? 'Editar' : 'Nueva Toma'}</h3>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 min-h-[48px] min-w-[48px] flex items-center justify-center"><X className="w-6 h-6"/></button>
-            </div>
-            {errorMsg && <div className="bg-rose-100 text-rose-900 p-3 rounded-xl font-bold">{errorMsg}</div>}
-            <form onSubmit={handleSave} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="font-bold block mb-1">Sistólica</label>
-                  <input type="number" min="40" max="250" value={systolic} onChange={e => setSystolic(e.target.value)} className="w-full text-3xl font-black p-3 bg-sky-50 border-2 rounded-2xl text-center min-h-[56px]" required />
-                </div>
-                <div>
-                  <label className="font-bold block mb-1">Diastólica</label>
-                  <input type="number" min="20" max="160" value={diastolic} onChange={e => setDiastolic(e.target.value)} className="w-full text-3xl font-black p-3 bg-sky-50 border-2 rounded-2xl text-center min-h-[56px]" required />
-                </div>
-              </div>
-              <div>
-                <label className="font-bold block nis-1">Pulso</label>
-                <input type="number" min="10" max="250" value={pulse} onChange={e => setPulse(e.target.value)} className="w-full text-2xl font-bold p-3 bg-sky-50 border-2 rounded-2xl text-center min-h-[52px]" required />
-              </div>
-              <div>
-                <label className="font-bold block mb-1">Fecha y Hora</label>
-                <input type="datetime-local" value={timestamp} onChange={e => setTimestamp(e.target.value)} className="w-full text-lg font-bold p-3 bg-sky-50 border-2 rounded-2xl min-h-[52px]" required />
-              </div>
-              <div>
-                <label className="font-bold block mb-1">Notas</label>
-                <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} className="w-full p-3 bg-sky-50 border-2 rounded-2xl" />
-              </div>
-              <div className="flex justify-end space-x-3 pt-4 border-t">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 bg-slate-200 font-bold rounded-2xl min-h-[48px]">Cancelar</button>
-                <button type="submit" className="px-8 py-3 bg-emerald-500 text-white font-bold rounded-2xl shadow min-h-[48px]">Guardar</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      {isImportModalOpen && importAnalysis && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl">
-            <div className="flex justify-between items-center border-b pb-4">
-              <h3 className="text-2xl font-black text-slate-800">Resumen de Importación</h3>
-              <button onClick={closeImportModal} className="p-2 min-h-[48px] min-w-[48px] flex items-center justify-center"><X className="w-6 h-6"/></button>
-            </div>
-            
-            <div className="space-y-4">
-              <p className="text-slate-600 text-base">
-                Se ha analizado el archivo de copia de seguridad. Revise el resumen antes de fusionar los datos en la base de datos:
-              </p>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-sky-50 border-2 border-sky-200 p-4 rounded-2xl text-center">
-                  <span className="block text-3xl font-black text-sky-900">{importAnalysis.newValidRecords.length}</span>
-                  <span className="text-sm font-bold text-sky-700">Nuevas a importar</span>
-                </div>
-                <div className="bg-slate-50 border-2 border-slate-200 p-4 rounded-2xl text-center">
-                  <span className="block text-3xl font-black text-slate-700">{importAnalysis.duplicatesCount}</span>
-                  <span className="text-sm font-bold text-slate-500">Duplicados omitidos</span>
-                </div>
-              </div>
-
-              {importAnalysis.invalidCount > 0 && (
-                <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded-2xl flex items-center justify-between">
-                  <span className="font-bold text-amber-900">Registros inválidos descartados:</span>
-                  <span className="text-xl font-black text-amber-800">{importAnalysis.invalidCount}</span>
-                </div>
-              )}
-
-              <div className="bg-slate-50 p-4 rounded-2xl text-sm text-slate-600 space-y-1">
-                <p>• Total en el fichero: <strong>{importAnalysis.totalInFile}</strong></p>
-                <p>• Los duplicados exactos y registros inválidos no sobrescribirán ni afectarán a sus datos existentes.</p>
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4 border-t">
-              <button 
-                type="button" 
-                onClick={closeImportModal} 
-                className="px-6 py-3 bg-slate-200 hover:bg-slate-300 font-bold rounded-2xl min-h-[48px]"
-                disabled={isImporting}
-              >
-                Cancelar
-              </button>
-              <button 
-                type="button" 
-                onClick={confirmAndExecuteImport} 
-                disabled={isImporting || importAnalysis.newValidRecords.length === 0}
-                className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold rounded-2xl shadow min-h-[48px]"
-              >
-                {isImporting ? 'Importando...' : 'Confirmar e Importar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ReadingModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        editingId={editingId}
+        systolic={systolic}
+        diastolic={diastolic}
+        pulse={pulse}
+        timestamp={timestamp}
+        notes={notes}
+        errorMsg={errorMsg}
+        setSystolic={setSystolic}
+        setDiastolic={setDiastolic}
+        setPulse={setPulse}
+        setTimestamp={setTimestamp}
+        setNotes={setNotes}
+        onSave={handleSave}
+      />
+      <ImportSummaryModal
+        isOpen={isImportModalOpen}
+        importAnalysis={importAnalysis}
+        isImporting={isImporting}
+        onClose={closeImportModal}
+        onConfirm={confirmAndExecuteImport}
+      />
 
       <ApiKeyModal 
         isOpen={isApiKeyModalOpen} 
