@@ -3,7 +3,7 @@ import { Plus, Heart, Calendar, FileText, Download, Upload, Share2, Trash2, Edit
 import { ApiKeyModal } from './components/ApiKeyModal';
 import { PrivacyModal } from './components/PrivacyModal';
 import { PhotoCaptureModal } from './components/PhotoCaptureModal';
-import { getGeminiApiKey } from './db';
+import { getGeminiApiKey } from './services/settingsService';
 import { compressImage, analyzeBloodPressureImage } from './services/gemini';
 
 import {

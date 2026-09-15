@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Key, Check, AlertCircle, X, Shield, Eye, Trash2 } from 'lucide-react';
-import { getGeminiApiKey, setGeminiApiKey, removeGeminiApiKey } from '../db';
+import { getGeminiApiKey, setGeminiApiKey, removeGeminiApiKey } from '../services/settingsService';
 import { testGeminiApiKey } from '../services/gemini';
 
 interface ApiKeyModalProps {
