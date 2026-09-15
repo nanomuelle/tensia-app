@@ -4,7 +4,7 @@ import { ApiKeyModal } from './components/ApiKeyModal';
 import { PrivacyModal } from './components/PrivacyModal';
 import { PhotoCaptureModal } from './components/PhotoCaptureModal';
 import { getGeminiApiKey } from './services/settingsService';
-import { compressImage, analyzeBloodPressureImage } from './services/gemini';
+import { compressImage, analyzeBloodPressureImage } from './services/geminiService';
 
 import {
   BloodPressureRecord,
