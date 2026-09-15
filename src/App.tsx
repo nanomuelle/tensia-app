@@ -3,26 +3,66 @@ import { Plus, Heart, Calendar, FileText, Download, Upload, Share2, Trash2, Edit
 import { ApiKeyModal } from './components/ApiKeyModal';
 import { PrivacyModal } from './components/PrivacyModal';
 import { PhotoCaptureModal } from './components/PhotoCaptureModal';
-import { getGeminiApiKey } from './services/settingsService';
-import { compressImage, analyzeBloodPressureImage } from './services/geminiService';
+
+import { useReadings } from './hooks/useReadings';
+import { useStoragePersistence } from './hooks/useStoragePersistence';
+import { useApiKey } from './hooks/useApiKey';
+import { useBackupImport } from './hooks/useBackupImport';
+import { useGeminiAI } from './hooks/useGeminiAI';
 
 import {
   BloodPressureRecord,
-  getAllReadings,
-  addReading,
-  updateReading,
-  deleteReading,
-  exportDatabaseToJson,
-  analyzeJsonImport,
-  persistImportedRecords,
-  ImportAnalysisResult,
   getCategory,
   validateReading,
 } from './services/readingsService';
 import { generateReadingsPDF } from './services/pdfService';
 
 export default function App() {
-  const [readings, setReadings] = useState<BloodPressureRecord[]>([]);
+  const {
+    readings,
+    loadReadings,
+    addReading,
+    updateReading,
+    deleteReading,
+  } = useReadings();
+
+  const {
+    isPersistent,
+    isRequestingPersistence,
+    persistenceMessage,
+    isStorageDismissed,
+    handleRequestPersistence,
+    dismissBanner,
+  } = useStoragePersistence();
+
+  const {
+    isApiKeyModalOpen,
+    openApiKeyModal,
+    closeApiKeyModal,
+  } = useApiKey();
+
+  const {
+    importAnalysis,
+    isImportModalOpen,
+    isImporting,
+    fileInputRef,
+    handleExportJson,
+    handleImportJson,
+    confirmAndExecuteImport: executeImport,
+    closeImportModal,
+  } = useBackupImport();
+
+  const {
+    isPrivacyModalOpen,
+    isPhotoModalOpen,
+    isAnalyzingPhoto,
+    handlePhotoAndListClick: photoAndListClick,
+    handlePrivacyAccepted,
+    handleImageSelected: processImageSelected,
+    closePrivacyModal,
+    closePhotoModal,
+  } = useGeminiAI();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [systolic, setSystolic] = useState('120');
@@ -32,20 +72,7 @@ export default function App() {
   const [notes, setNotes] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [isPersistent, setIsPersistent] = useState<boolean | null>(null);
-  const [isRequestingPersistence, setIsRequestingPersistence] = useState(false);
-  const [persistenceMessage, setPersistenceMessage] = useState<{ text: string; type: 'success' | 'warning' | 'info' | 'error' } | null>(null);
-  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
-  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
-  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
-  const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [importAnalysis, setImportAnalysis] = useState<ImportAnalysisResult | null>(null);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
   const [isUtilitiesOpen, setIsUtilitiesOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [isStorageDismissed, setIsStorageDismissed] = useState(() => localStorage.getItem('tensia_dismiss_persistence_banner') === 'true');
   const utilitiesMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -59,100 +86,27 @@ export default function App() {
   }, []);
 
   async function handlePhotoAndListClick() {
-    const apiKey = await getGeminiApiKey();
-    if (!apiKey) {
-      setIsApiKeyModalOpen(true);
-      return;
-    }
-    const privacyAccepted = localStorage.getItem('tensia_privacy_accepted');
-    if (!privacyAccepted) {
-      setIsPrivacyModalOpen(true);
-      return;
-    }
-    setIsPhotoModalOpen(true);
-  }
-
-  function handlePrivacyAccepted() {
-    localStorage.setItem('tensia_privacy_accepted', 'true');
-    setIsPrivacyModalOpen(false);
-    setIsPhotoModalOpen(true);
+    await photoAndListClick(openApiKeyModal);
   }
 
   async function handleImageSelected(fileOrBlob: File | Blob) {
-    setIsAnalyzingPhoto(true);
-    setAnalysisError(null);
-    try {
-      const apiKey = await getGeminiApiKey();
-      if (!apiKey) {
-        setIsApiKeyModalOpen(true);
-        setIsAnalyzingPhoto(false);
-        return;
-      }
-      const compressedBase64 = await compressImage(fileOrBlob);
-      const result = await analyzeBloodPressureImage(apiKey, compressedBase64);
-      
-      setEditingId(null);
-      setSystolic(result.systolic.toString());
-      setDiastolic(result.diastolic.toString());
-      setPulse(result.pulse.toString());
-      setTimestamp(toLocalDateTimeString(new Date()));
-      setNotes('Capturado con foto y Gemini AI');
-      setErrorMsg(null);
-      setIsModalOpen(true);
-    } catch (err: any) {
-      setAnalysisError(err.message || 'Error al analizar la imagen con Gemini.');
-      setErrorMsg(err.message || 'Error al analizar la imagen con Gemini.');
-      setIsModalOpen(true);
-    } finally {
-      setIsAnalyzingPhoto(false);
-    }
-  }
-
-
-  useEffect(() => {
-    loadData();
-    if (navigator.storage?.persisted) {
-      navigator.storage.persisted().then(setIsPersistent).catch(() => {});
-    }
-  }, []);
-
-  async function handleRequestPersistence() {
-    setIsRequestingPersistence(true);
-    setPersistenceMessage(null);
-    try {
-      if (!navigator.storage?.persist) {
-        setPersistenceMessage({
-          text: 'La función de almacenamiento persistente no es compatible con este navegador.',
-          type: 'info'
-        });
-        setIsRequestingPersistence(false);
-        return;
-      }
-      const granted = await navigator.storage.persist();
-      setIsPersistent(granted);
-      if (granted) {
-        setPersistenceMessage({
-          text: 'El almacenamiento persistente está activado correctamente.',
-          type: 'success'
-        });
-      } else {
-        setPersistenceMessage({
-          text: 'El navegador rechazó la solicitud de almacenamiento persistente. Sus lecturas siguen guardándose localmente, pero podrían eliminarse si el navegador necesita liberar espacio.',
-          type: 'warning'
-        });
-      }
-    } catch (err) {
-      setPersistenceMessage({
-        text: 'No se pudo completar la solicitud de almacenamiento persistente.',
-        type: 'error'
-      });
-    } finally {
-      setIsRequestingPersistence(false);
-    }
-  }
-
-  async function loadData() {
-    setReadings(await getAllReadings());
+    await processImageSelected(fileOrBlob, {
+      onResult: (result) => {
+        setEditingId(null);
+        setSystolic(result.systolic.toString());
+        setDiastolic(result.diastolic.toString());
+        setPulse(result.pulse.toString());
+        setTimestamp(toLocalDateTimeString(new Date()));
+        setNotes('Capturado con foto y Gemini AI');
+        setErrorMsg(null);
+        setIsModalOpen(true);
+      },
+      onRequireApiKey: openApiKeyModal,
+      onError: (msg) => {
+        setErrorMsg(msg);
+        setIsModalOpen(true);
+      },
+    });
   }
 
   function toLocalDateTimeString(date: Date): string {
@@ -205,7 +159,6 @@ export default function App() {
       setSuccessMsg('¡Medición guardada!');
     }
     setIsModalOpen(false);
-    loadData();
     setTimeout(() => setSuccessMsg(null), 3000);
   }
 
@@ -213,67 +166,22 @@ export default function App() {
     if (window.confirm('¿Eliminar esta medición?')) {
       await deleteReading(id);
       setSuccessMsg('Medición eliminada.');
-      loadData();
       setTimeout(() => setSuccessMsg(null), 3000);
     }
   }
 
-  async function handleExportJson() {
-    const jsonStr = await exportDatabaseToJson();
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Tensia-Backup.json`;
-    a.click();
-  }
-
-  async function handleImportJson(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      try {
-        const text = ev.target?.result as string;
-        const analysis = await analyzeJsonImport(text);
-        setImportAnalysis(analysis);
-        setIsImportModalOpen(true);
-      } catch (err: any) {
-        alert(err.message || 'Error al procesar el archivo JSON.');
-      } finally {
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      }
-    };
-    reader.onerror = () => {
-      alert('Error al leer el archivo.');
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    };
-    reader.readAsText(file);
-  }
-
   async function confirmAndExecuteImport() {
-    if (!importAnalysis || importAnalysis.newValidRecords.length === 0) {
-      setIsImportModalOpen(false);
-      return;
-    }
-    setIsImporting(true);
-    try {
-      const addedCount = await persistImportedRecords(importAnalysis.newValidRecords);
-      setSuccessMsg(`¡Se han importado ${addedCount} lecturas nuevas con éxito!`);
-      loadData();
-      setTimeout(() => setSuccessMsg(null), 4000);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Error al guardar las lecturas importadas.');
-      setTimeout(() => setErrorMsg(null), 4000);
-    } finally {
-      setIsImporting(false);
-      setIsImportModalOpen(false);
-      setImportAnalysis(null);
-    }
+    await executeImport({
+      onSuccess: async (addedCount) => {
+        setSuccessMsg(`¡Se han importado ${addedCount} lecturas nuevas con éxito!`);
+        await loadReadings();
+        setTimeout(() => setSuccessMsg(null), 4000);
+      },
+      onError: (err) => {
+        setErrorMsg(err.message || 'Error al guardar las lecturas importadas.');
+        setTimeout(() => setErrorMsg(null), 4000);
+      },
+    });
   }
 
   async function handleShare() {
@@ -319,7 +227,7 @@ export default function App() {
               <Plus className="w-5 h-5" /> <span className="hidden sm:inline">Nueva Toma</span>
             </button>
             <button 
-              onClick={() => setIsApiKeyModalOpen(true)} 
+              onClick={openApiKeyModal} 
               className="bg-sky-600 hover:bg-sky-800 text-white font-bold p-2.5 rounded-2xl flex items-center justify-center min-h-[48px] min-w-[48px] shadow"
               title="Configurar Clave API de Gemini"
               aria-label="Configurar Clave API de Gemini"
@@ -394,10 +302,7 @@ export default function App() {
                 {isRequestingPersistence ? 'Activando...' : 'Activar'}
               </button>
               <button 
-                onClick={() => {
-                  setIsStorageDismissed(true);
-                  localStorage.setItem('tensia_dismiss_persistence_banner', 'true');
-                }}
+                onClick={dismissBanner}
                 className="text-amber-700 hover:text-amber-900 p-2 rounded-xl min-h-[38px] min-w-[38px] flex items-center justify-center"
                 title="Cerrar aviso"
                 aria-label="Cerrar aviso"
@@ -571,7 +476,7 @@ export default function App() {
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl">
             <div className="flex justify-between items-center border-b pb-4">
               <h3 className="text-2xl font-black text-slate-800">Resumen de Importación</h3>
-              <button onClick={() => { setIsImportModalOpen(false); setImportAnalysis(null); }} className="p-2 min-h-[48px] min-w-[48px] flex items-center justify-center"><X className="w-6 h-6"/></button>
+              <button onClick={closeImportModal} className="p-2 min-h-[48px] min-w-[48px] flex items-center justify-center"><X className="w-6 h-6"/></button>
             </div>
             
             <div className="space-y-4">
@@ -606,7 +511,7 @@ export default function App() {
             <div className="flex justify-end space-x-3 pt-4 border-t">
               <button 
                 type="button" 
-                onClick={() => { setIsImportModalOpen(false); setImportAnalysis(null); }} 
+                onClick={closeImportModal} 
                 className="px-6 py-3 bg-slate-200 hover:bg-slate-300 font-bold rounded-2xl min-h-[48px]"
                 disabled={isImporting}
               >
@@ -627,17 +532,17 @@ export default function App() {
 
       <ApiKeyModal 
         isOpen={isApiKeyModalOpen} 
-        onClose={() => setIsApiKeyModalOpen(false)} 
+        onClose={closeApiKeyModal} 
         onSaved={() => setSuccessMsg('¡Clave de API guardada correctamente!')}
       />
       <PrivacyModal 
         isOpen={isPrivacyModalOpen} 
         onAccept={handlePrivacyAccepted} 
-        onCancel={() => setIsPrivacyModalOpen(false)} 
+        onCancel={closePrivacyModal} 
       />
       <PhotoCaptureModal 
         isOpen={isPhotoModalOpen} 
-        onClose={() => setIsPhotoModalOpen(false)} 
+        onClose={closePhotoModal} 
         onImageSelected={handleImageSelected} 
       />
     </div>

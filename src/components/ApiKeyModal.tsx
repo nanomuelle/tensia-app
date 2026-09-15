@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Key, Check, AlertCircle, X, Shield, Eye, Trash2 } from 'lucide-react';
-import { getGeminiApiKey, setGeminiApiKey, removeGeminiApiKey } from '../services/settingsService';
-import { testGeminiApiKey } from '../services/geminiService';
+import { useApiKey } from '../hooks/useApiKey';
 
 interface ApiKeyModalProps {
   isOpen: boolean;
@@ -10,59 +9,48 @@ interface ApiKeyModalProps {
 }
 
 export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
-  const [apiKey, setApiKey] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
-  const [showKey, setShowKey] = useState(false);
+  const {
+    apiKey,
+    setApiKey,
+    loading,
+    testing,
+    testResult,
+    setTestResult,
+    showKey,
+    setShowKey,
+    loadApiKey,
+    saveApiKey,
+    removeApiKey,
+    testApiKey,
+  } = useApiKey();
 
   useEffect(() => {
     if (isOpen) {
-      getGeminiApiKey().then((val) => setApiKey(val || ''));
+      loadApiKey();
       setTestResult(null);
       setShowKey(false);
     }
-  }, [isOpen]);
+  }, [isOpen, loadApiKey, setTestResult, setShowKey]);
 
   if (!isOpen) return null;
 
   async function handleTest() {
-    if (!apiKey.trim()) {
-      setTestResult({ success: false, message: 'Introduce una clave de API.' });
-      return;
-    }
-    setTesting(true);
-    setTestResult(null);
-    try {
-      await testGeminiApiKey(apiKey);
-      setTestResult({ success: true, message: '¡Clave de API válida!' });
-    } catch (err: any) {
-      setTestResult({ success: false, message: err.message || 'Error al verificar.' });
-    } finally {
-      setTesting(false);
-    }
+    await testApiKey();
   }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    try {
-      await setGeminiApiKey(apiKey);
+    const success = await saveApiKey();
+    if (success) {
       if (onSaved) onSaved();
       onClose();
-    } catch (err) {
-      setTestResult({ success: false, message: 'Error al guardar.' });
-    } finally {
-      setLoading(false);
     }
   }
 
   async function handleRemove() {
     if (window.confirm('¿Eliminar la clave guardada?')) {
-      await removeGeminiApiKey();
-      setApiKey('');
-      setTestResult({ success: true, message: 'Clave eliminada.' });
-      if (onSaved) onSaved();
+      const removed = await removeApiKey();
+      if (removed && onSaved) onSaved();
     }
   }
 
@@ -113,3 +101,4 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
     </div>
   );
 }
+
