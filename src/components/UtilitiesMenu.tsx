@@ -3,6 +3,7 @@ import { MoreVertical, FileText, Share2, Download, Upload } from 'lucide-react';
 
 export interface UtilitiesMenuProps {
   hasReadings: boolean;
+  onOpenAmpa: () => void;
   onExportPDF: () => void;
   onShare: () => void;
   onExportBackup: () => void;
@@ -11,6 +12,7 @@ export interface UtilitiesMenuProps {
 
 export const UtilitiesMenu: React.FC<UtilitiesMenuProps> = ({
   hasReadings,
+  onOpenAmpa,
   onExportPDF,
   onShare,
   onExportBackup,
@@ -44,6 +46,17 @@ export const UtilitiesMenu: React.FC<UtilitiesMenuProps> = ({
           <div className="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
             Más opciones
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              setIsOpen(false);
+              onOpenAmpa();
+            }}
+            className="w-full text-left px-4 py-3 hover:bg-sky-50 flex items-center space-x-3 text-slate-700 font-semibold min-h-[44px]"
+          >
+            <FileText className="w-5 h-5 text-sky-600" />
+            <span>Informe semanal AMPA</span>
+          </button>
           <button
             onClick={() => {
               onExportPDF();

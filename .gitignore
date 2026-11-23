@@ -29,3 +29,6 @@ pnpm-debug.log*
 # Cache de Vite/TypeScript
 .vite/
 *.tsbuildinfo
+# Playwright
+/test-results/
+/playwright-report/
