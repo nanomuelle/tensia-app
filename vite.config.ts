@@ -1,3 +1,4 @@
+import { APP_NAME } from './src/appConfig';
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -10,7 +11,7 @@ export default defineConfig({
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
         name: 'Tensia - Tensión Arterial',
-        short_name: 'Tensia',
+        short_name: APP_NAME,
         description: 'Control de tensión arterial sencillo y privado para adultos mayores',
         theme_color: '#0284c7',
         background_color: '#f8fafc',

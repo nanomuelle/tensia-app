@@ -1,3 +1,4 @@
+import { AmpaReportModal } from './components/AmpaReportModal';
 import React, { useState } from 'react';
 import { Plus, CheckCircle2, Activity, Key, Camera, Loader2 } from 'lucide-react';
 import { ApiKeyModal } from './components/ApiKeyModal';
@@ -19,9 +20,9 @@ import {
   BloodPressureRecord,
   validateReading,
 } from './services/readingsService';
-import { generateReadingsPDF } from './services/pdfService';
 
 export default function App() {
+  const [reportMode, setReportMode] = useState<'ampa' | 'history' | null>(null);
   const {
     readings,
     loadReadings,
@@ -218,8 +219,9 @@ export default function App() {
               <Key className="w-5 h-5" />
             </button>
             <UtilitiesMenu
+              onOpenAmpa={() => setReportMode('ampa')}
               hasReadings={readings.length > 0}
-              onExportPDF={() => generateReadingsPDF(readings)}
+              onExportPDF={() => setReportMode('history')}
               onShare={handleShare}
               onExportBackup={handleExportJson}
               onImportClick={() => fileInputRef.current?.click()}
@@ -237,13 +239,19 @@ export default function App() {
           onRequestPersistence={handleRequestPersistence}
           onDismiss={dismissBanner}
         />
+        <input
+          type="file"
+          accept=".json,application/json"
+          ref={fileInputRef}
+          onChange={handleImportJson}
+          className="hidden"
+        />
         <QuickActionsBar
           hasReadings={readings.length > 0}
-          onExportPDF={() => generateReadingsPDF(readings)}
+          onExportPDF={() => setReportMode('history')}
           onShare={handleShare}
           onExportBackup={handleExportJson}
-          onImportJson={handleImportJson}
-          fileInputRef={fileInputRef}
+          onOpenAmpa={() => setReportMode('ampa')}
         />
         <div className="pt-3"></div>
         <ReadingsHistory
@@ -253,6 +261,7 @@ export default function App() {
           onAddNew={handleOpenNewModal}
         />
       </main>
+      {reportMode && <AmpaReportModal key={reportMode} mode={reportMode} onClose={() => setReportMode(null)} />}
       <ReadingModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
