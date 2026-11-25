@@ -1,24 +1,13 @@
-# Repository Guidelines
+# Guía para agentes
 
-## Project Structure
+Empieza por el [índice de documentación](docs/README.md) y abre solo las fichas relevantes para la tarea. Usa sus enlaces para contrastar reglas y flujos con el código y las pruebas actuales. Al cambiar un flujo, actualiza su ficha; evita duplicar reglas entre páginas.
 
-Tensia is a Spanish-language blood pressure tracker built with React, TypeScript, Vite, and Tailwind CSS. The app starts in `src/main.tsx`, and `src/App.tsx` assembles the main screen. Put reusable UI in `src/components/`, React state and browser workflows in `src/hooks/`, and data access, validation, Gemini photo recognition, and PDF export in `src/services/`. The app stores readings locally using Dexie and IndexedDB. Global styles live in `src/index.css`, and the PWA manifest and service worker settings live in `vite.config.ts`. Consult `openspec/specs/` for expected behavior and `openspec/changes/` for proposals and design notes.
+## Código
 
-## Development Commands
+- Entrada en `src/main.tsx` y pantalla principal en `src/App.tsx`. Coloca UI reutilizable en `src/components/`, estado React y flujos del navegador en `src/hooks/`, y datos, validación, Gemini y PDF en `src/services/`.
+- Usa dos espacios y sigue el estilo de comillas y punto y coma del archivo. Nombra los componentes en PascalCase y los hooks con prefijo `use`. Usa utilidades de Tailwind y mantén los textos de interfaz en español.
 
-- `npm ci` installs dependencies from the committed lockfile.
-- `npm run dev` starts the Vite development server with hot reload.
-- `npm run build` runs TypeScript checks and generates the production build in `dist/`.
-- `npm run preview` serves the production build locally after a build.
+## Verificación y cambios
 
-## Coding Style
-
-Use two-space indentation and follow the surrounding file’s quote and semicolon style. Name components and their files in PascalCase, as in `ReadingModal.tsx`. Prefix hooks with `use`, as in `useReadings.ts`, and follow the service naming pattern in `readingsService.ts`. Use Tailwind utilities for component styling and keep user-facing strings in Spanish. The project has no configured lint or formatting script.
-
-## Testing
-
-There is no configured automated test runner or coverage threshold. Run `npm run build` and verify the affected flows in a browser. For storage or backup changes, use synthetic readings to check persistence after reload and confirm that JSON export and import preserve the expected data. Use the production preview for PWA changes.
-
-## Commits and Pull Requests
-
-Keep commit subjects short and scoped. Recent examples include `refactor/split-app-in-components` and `feature/importar-backup-json`. In pull requests, summarize the behavior change, link the relevant issue or OpenSpec proposal when available, and list the checks you ran. Include screenshots for visible UI changes and use sample data in screenshots and backups. Keep API keys and local environment files out of commits.
+- Sigue la [guía de entorno y pruebas](docs/desarrollo/entorno-y-pruebas.md). Compila y verifica los flujos afectados. Para almacenamiento y copias, usa tomas sintéticas y comprueba recarga, exportación e importación; para PWA, usa el preview de producción.
+- Usa mensajes de commit breves y acotados. En una PR resume los cambios, enlaza la incidencia si existe e indica las comprobaciones realizadas. Si cambia la interfaz, incluye capturas con datos sintéticos. No subas claves, datos personales ni archivos locales de entorno.
