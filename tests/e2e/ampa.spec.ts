@@ -1,28 +1,13 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { seedReadings } from './helpers/indexedDb';
+import type { TimePeriod } from '../../src/services/db';
 
 const readings = [
-  { timestamp: '2026-11-16T08:00:00Z', period: 'Mañana' },
-  { timestamp: '2026-11-23T13:00:00Z', period: 'Tarde' },
+  { timestamp: '2026-11-16T08:00:00Z', period: 'Mañana' as TimePeriod },
+  { timestamp: '2026-11-23T13:00:00Z', period: 'Tarde' as TimePeriod },
 ].map(r => ({ ...r, systolic: 138, diastolic: 80, pulse: 65 }));
-
-async function seed(page: Page, items: typeof readings) {
-  await page.evaluate(async records => {
-    await new Promise<void>((resolve, reject) => {
-      const request = indexedDB.open('TensiaDatabase');
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        const db = request.result;
-        const transaction = db.transaction('readings', 'readwrite');
-        transaction.oncomplete = () => { db.close(); resolve(); };
-        transaction.onabort = () => { db.close(); reject(transaction.error); };
-        for (const reading of records) transaction.objectStore('readings').add(reading);
-      };
-    });
-  }, items);
-  await page.reload();
-}
 
 async function openReport(page: Page) {
   await page.getByRole('button', { name: 'Registro AMPA', exact: true }).click();
@@ -40,7 +25,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('restaura preferencias y descarga un único PDF antes de cerrar el formulario', async ({ page }) => {
-  await seed(page, readings);
+  await seedReadings(page, readings);
+  await page.reload();
   let dialog = await openReport(page);
   await expect(dialog.getByLabel('Semana del informe')).toHaveValue('2026-11-23');
   await dialog.getByLabel('Franjas incluidas').selectOption('morning-night');
@@ -74,7 +60,8 @@ test('restaura preferencias y descarga un único PDF antes de cerrar el formular
 });
 
 test('mantiene abierto el formulario sin datos, con campos incompletos o si falla la descarga', async ({ page }) => {
-  await seed(page, readings.slice(1));
+  await seedReadings(page, readings.slice(1));
+  await page.reload();
   const dialog = await openReport(page);
   const generate = dialog.getByRole('button', { name: 'Generar y descargar PDF' });
   await dialog.getByLabel('Franjas incluidas').selectOption('morning-night');
@@ -97,26 +84,14 @@ test('mantiene abierto el formulario sin datos, con campos incompletos o si fall
   await expect(dialog).toBeVisible();
 });
 
-test('ordena los accesos directos y abre la importación desde el menú', async ({ page }) => {
+test('ordena los accesos directos', async ({ page }) => {
   const shortcuts = page.getByRole('group', { name: 'Accesos directos' });
   await expect(shortcuts.getByRole('button')).toHaveText(['Registro AMPA', 'PDF', 'Compartir', 'Backup']);
-
-  const importButton = page.getByRole('button', { name: 'Importar JSON', exact: true });
-  await expect(importButton).toHaveCount(0);
-  await page.getByRole('button', { name: 'Más opciones', exact: true }).click();
-  const pending = page.waitForEvent('filechooser');
-  await importButton.click();
-  const chooser = await pending;
-  await chooser.setFiles({
-    name: 'lecturas.json',
-    mimeType: 'application/json',
-    buffer: Buffer.from(JSON.stringify(readings)),
-  });
-  await expect(page.getByText('Resumen de Importación', { exact: true })).toBeVisible();
 });
 
 test('PDF general propone el intervalo completo y comparte el perfil con AMPA', async ({ page }) => {
-  await seed(page, readings);
+  await seedReadings(page, readings);
+  await page.reload();
   await page.getByRole('button', { name: 'PDF', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Informe de lecturas de presión arterial' });
   await expect(dialog.getByLabel('Desde')).toHaveValue('2026-11-16');

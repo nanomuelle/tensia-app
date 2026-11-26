@@ -14,5 +14,5 @@ Al confirmar, añade solo las tomas nuevas válidas en una transacción; no borr
 ## Código y verificación
 
 - [Menú](../../src/components/UtilitiesMenu.tsx), [resumen](../../src/components/ImportSummaryModal.tsx), [flujo de archivo](../../src/hooks/useBackupImport.ts) y [análisis y persistencia](../../src/services/readingsService.ts). El flujo visible usa `analyzeJsonImport` y `persistImportedRecords`, no `importDatabaseFromJson`.
-- [Prueba de navegador](../../tests/e2e/ampa.spec.ts): comprueba el acceso al selector desde el menú y la apertura del resumen con un archivo válido, no la deduplicación ni la escritura.
+- [Pruebas de navegador](../../tests/e2e/backup.spec.ts): selector, resumen, cancelación, deduplicación, entradas inválidas y restauración de una descarga en otro contexto. [Prueba de IndexedDB](../../tests/e2e/readings-db.spec.ts): un fallo en la segunda escritura revierte la importación completa.
 - **Comprobación manual:** con una toma sintética ya guardada, importar un archivo con esa toma, otra nueva repetida dos veces y una fila inválida: cuatro registros, una candidata nueva, dos duplicados y una inválida. Confirmar, recargar y comprobar que se conservan ambas tomas. Reimportar el mismo archivo no debe añadir otra.

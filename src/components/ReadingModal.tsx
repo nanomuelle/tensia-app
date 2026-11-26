@@ -60,8 +60,9 @@ export const ReadingModal: React.FC<ReadingModalProps> = ({
         <form onSubmit={onSave} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="font-bold block mb-1">Sistólica</label>
+              <label htmlFor="reading-systolic" className="font-bold block mb-1">Sistólica</label>
               <input
+                id="reading-systolic"
                 type="number"
                 min="40"
                 max="250"
@@ -72,8 +73,9 @@ export const ReadingModal: React.FC<ReadingModalProps> = ({
               />
             </div>
             <div>
-              <label className="font-bold block mb-1">Diastólica</label>
+              <label htmlFor="reading-diastolic" className="font-bold block mb-1">Diastólica</label>
               <input
+                id="reading-diastolic"
                 type="number"
                 min="20"
                 max="160"
@@ -85,8 +87,9 @@ export const ReadingModal: React.FC<ReadingModalProps> = ({
             </div>
           </div>
           <div>
-            <label className="font-bold block mb-1">Pulso</label>
+            <label htmlFor="reading-pulse" className="font-bold block mb-1">Pulso</label>
             <input
+              id="reading-pulse"
               type="number"
               min="10"
               max="250"
@@ -97,8 +100,9 @@ export const ReadingModal: React.FC<ReadingModalProps> = ({
             />
           </div>
           <div>
-            <label className="font-bold block mb-1">Fecha y Hora</label>
+            <label htmlFor="reading-timestamp" className="font-bold block mb-1">Fecha y Hora</label>
             <input
+              id="reading-timestamp"
               type="datetime-local"
               value={timestamp}
               onChange={(e) => setTimestamp(e.target.value)}
@@ -107,8 +111,9 @@ export const ReadingModal: React.FC<ReadingModalProps> = ({
             />
           </div>
           <div>
-            <label className="font-bold block mb-1">Notas</label>
+            <label htmlFor="reading-notes" className="font-bold block mb-1">Notas</label>
             <textarea
+              id="reading-notes"
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

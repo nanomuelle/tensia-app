@@ -14,8 +14,8 @@ Tensia usa React, TypeScript, Vite y Tailwind CSS. La entrada es [`src/main.tsx`
 
 ## Cobertura
 
-- [Pruebas de Node](../../tests/ampa.test.ts): sesiones, medias y recuentos AMPA, fechas locales y estructura/paginación de los PDF.
-- [Pruebas de navegador](../../tests/e2e/ampa.spec.ts): formulario de informes, restauración y perfil compartido, validación y descarga, accesos directos y entrada al selector JSON. [Playwright](../../playwright.config.ts) arranca Vite en `127.0.0.1:4174`, usa Chromium y emula la zona `Europe/Madrid`. Las pruebas usan contextos aislados y lecturas sintéticas.
+- Pruebas de Node: [AMPA y PDF](../../tests/ampa.test.ts) y [reglas de mediciones](../../tests/readings-rules.test.ts).
+- Pruebas de navegador: [informes y accesos directos](../../tests/e2e/ampa.spec.ts), [mediciones e historial](../../tests/e2e/readings.spec.ts), [descarga y restauración JSON](../../tests/e2e/backup.spec.ts) y [transacción de importación](../../tests/e2e/readings-db.spec.ts). [Playwright](../../playwright.config.ts) arranca Vite en `127.0.0.1:4174`, usa Chromium y emula la zona `Europe/Madrid`. Las pruebas usan contextos aislados y lecturas sintéticas.
 - Para cambios en flujos sin cobertura, sigue las comprobaciones manuales enlazadas en el [índice](../README.md). Usa datos sintéticos, comprueba persistencia tras recargar cuando corresponda y verifica exportación e importación si cambias el formato o el almacenamiento. No uses claves ni fotos reales en fixtures.
 
 Los scripts vigentes están en [`package.json`](../../package.json). No hay un script configurado de lint ni de formato.
