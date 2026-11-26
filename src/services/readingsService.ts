@@ -1,4 +1,5 @@
-import { db, BloodPressureRecord, TimePeriod } from './db';
+import { db } from './db.ts';
+import type { BloodPressureRecord, TimePeriod } from './db.ts';
 
 export type { BloodPressureRecord, TimePeriod };
 

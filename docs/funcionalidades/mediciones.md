@@ -33,4 +33,5 @@ Las tomas se guardan en [IndexedDB](../arquitectura/datos-locales-y-pwa.md). No 
 
 - [Pantalla principal](../../src/App.tsx), [formulario](../../src/components/ReadingModal.tsx), [historial](../../src/components/ReadingsHistory.tsx) e [indicador](../../src/components/ReadingCategoryBadge.tsx).
 - [Hook de lecturas](../../src/hooks/useReadings.ts) y [validación, categorías y persistencia](../../src/services/readingsService.ts).
+- [Pruebas de reglas](../../tests/readings-rules.test.ts): límites inclusivos, franjas y categorías. [Pruebas de navegador](../../tests/e2e/readings.spec.ts): alta y cancelación, edición con recálculo de franja, persistencia, borrado e historial en móvil y escritorio.
 - **Comprobación manual:** crear una toma con nota, recargar, editar la hora cruzando un límite de franja, rechazar una cifra fuera de rango y comprobar que cancelar el borrado no elimina la toma.

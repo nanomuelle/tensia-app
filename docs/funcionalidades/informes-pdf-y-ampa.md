@@ -23,4 +23,4 @@ Al pulsar **Generar y descargar PDF**, la app prepara el archivo en el navegador
 ## Código y verificación
 
 - [Formulario común](../../src/components/AmpaReportModal.tsx), [perfil](../../src/services/settingsService.ts), [cabecera PDF](../../src/services/pdfPatientHeader.ts), [PDF general](../../src/services/pdfService.ts), [cálculos AMPA](../../src/services/ampaReport.ts) y [PDF AMPA](../../src/services/ampaPdfService.ts).
-- [Pruebas unitarias](../../tests/ampa.test.ts): cálculos, cambio de hora, filtros, fechas y paginación. [Pruebas de navegador](../../tests/e2e/ampa.spec.ts): perfil compartido, restauración, validación y descarga.
+- [Pruebas unitarias](../../tests/ampa.test.ts): cálculos, cambio de hora, filtros, fechas y paginación. [Pruebas de navegador](../../tests/e2e/ampa.spec.ts): perfil compartido, restauración, validación y descarga; intervalo sin resultados y selección de semana no persistente. [Fallos de almacenamiento](../../tests/e2e/reports-errors.spec.ts): errores al leer o guardar el perfil sin cambiar las mediciones.

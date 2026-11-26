@@ -101,12 +101,14 @@ export const ReadingsHistory: React.FC<ReadingsHistoryProps> = ({
                         </div>
                         <div className="flex space-x-1">
                           <button
+                            aria-label="Editar medición"
                             onClick={() => onEdit(r)}
                             className="p-2 bg-sky-50 text-sky-700 rounded-xl"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
+                            aria-label="Eliminar medición"
                             onClick={() => r.id && onDelete(r.id)}
                             className="p-2 bg-rose-50 text-rose-700 rounded-xl"
                           >
@@ -155,12 +157,14 @@ export const ReadingsHistory: React.FC<ReadingsHistoryProps> = ({
                         </div>
                         <div className="flex space-x-1">
                           <button
+                            aria-label="Editar medición"
                             onClick={() => onEdit(r)}
                             className="p-2 bg-sky-50 text-sky-700 rounded-xl"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
+                            aria-label="Eliminar medición"
                             onClick={() => r.id && onDelete(r.id)}
                             className="p-2 bg-rose-50 text-rose-700 rounded-xl"
                           >
@@ -202,12 +206,14 @@ export const ReadingsHistory: React.FC<ReadingsHistoryProps> = ({
                     </div>
                     <div className="flex space-x-1">
                       <button
+                        aria-label="Editar medición"
                         onClick={() => onEdit(r)}
                         className="p-2 bg-sky-50 text-sky-700 rounded-xl"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
+                        aria-label="Eliminar medición"
                         onClick={() => r.id && onDelete(r.id)}
                         className="p-2 bg-rose-50 text-rose-700 rounded-xl"
                       >
