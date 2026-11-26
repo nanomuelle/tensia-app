@@ -10,6 +10,7 @@ import { UtilitiesMenu } from './components/UtilitiesMenu';
 import { QuickActionsBar } from './components/QuickActionsBar';
 import { ReadingModal } from './components/ReadingModal';
 import { ImportSummaryModal } from './components/ImportSummaryModal';
+import { shareReadings } from './services/shareService';
 
 import { useReadings } from './hooks/useReadings';
 import { useStoragePersistence } from './hooks/useStoragePersistence';
@@ -175,14 +176,10 @@ export default function App() {
     });
   }
 
-  async function handleShare() {
-    const summary = readings.slice(0, 5).map(r => `${new Date(r.timestamp).toLocaleDateString()} (${r.period}): ${r.systolic}/${r.diastolic} mmHg`).join('\n');
-    const text = `Tensión Arterial (Tensia):\n${summary}`;
-    if (navigator.share) {
-      try { await navigator.share({ title: 'Tensia', text }); } catch (e) {}
-    } else {
-      window.location.href = `mailto:?subject=Tensión&body=${encodeURIComponent(text)}`;
-    }
+  function handleShare() {
+    return shareReadings(readings, navigator.share?.bind(navigator), url => {
+      window.location.href = url;
+    });
   }
 
   return (

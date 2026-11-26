@@ -70,10 +70,10 @@ export function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalProps) {
         </div>
         <form onSubmit={handleSave} className="space-y-4">
           <div>
-            <label className="font-bold block mb-2">Clave de API</label>
+            <label htmlFor="gemini-api-key" className="font-bold block mb-2">Clave de API</label>
             <div className="relative flex items-center">
-              <input type={showKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="AIzaSy..." className="w-full text-lg font-mono p-4 pr-14 bg-slate-50 border-2 border-slate-300 rounded-2xl min-h-[56px]" />
-              <button type="button" onClick={() => setShowKey(!showKey)} className="absolute right-3 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"><Eye className="w-6 h-6 text-slate-500" /></button>
+              <input id="gemini-api-key" type={showKey ? 'text' : 'password'} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="AIzaSy..." className="w-full text-lg font-mono p-4 pr-14 bg-slate-50 border-2 border-slate-300 rounded-2xl min-h-[56px]" />
+              <button type="button" aria-label={showKey ? 'Ocultar clave' : 'Mostrar clave'} onClick={() => setShowKey(!showKey)} className="absolute right-3 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"><Eye className="w-6 h-6 text-slate-500" /></button>
             </div>
           </div>
           {testResult && (

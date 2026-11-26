@@ -10,5 +10,6 @@ Cada línea contiene la fecha local, la franja guardada y la presión sistólica
 
 ## Código y verificación
 
-- [Implementación de compartir](../../src/App.tsx), [orden de lecturas](../../src/services/readingsService.ts), [accesos directos](../../src/components/QuickActionsBar.tsx) y [menú](../../src/components/UtilitiesMenu.tsx).
-- **Comprobación manual:** crear seis tomas sintéticas, verificar que solo aparecen las cinco más recientes y cancelar antes de enviarlas. Comprobar por separado el comportamiento sin Web Share.
+- [Servicio de compartir](../../src/services/shareService.ts) y [conexión con el navegador](../../src/App.tsx), [orden de lecturas](../../src/services/readingsService.ts), [accesos directos](../../src/components/QuickActionsBar.tsx) y [menú](../../src/components/UtilitiesMenu.tsx).
+- [Pruebas de navegador](../../tests/e2e/share.spec.ts): accesos, orden y contenido del resumen. [Pruebas del servicio](../../tests/share.test.ts): alternativa por correo y ausencia de alternativa si Web Share rechaza.
+- **Comprobación manual:** en un dispositivo con Web Share o cliente de correo, abrir el selector con lecturas sintéticas y cancelar antes del envío.

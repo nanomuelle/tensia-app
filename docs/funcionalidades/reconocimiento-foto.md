@@ -14,4 +14,5 @@ El análisis requiere conexión. El navegador envía a Google la imagen comprimi
 ## Código y verificación
 
 - [Configuración de clave](../../src/components/ApiKeyModal.tsx), [aviso de privacidad](../../src/components/PrivacyModal.tsx), [selector](../../src/components/PhotoCaptureModal.tsx), [hook de clave](../../src/hooks/useApiKey.ts), [flujo](../../src/hooks/useGeminiAI.ts) y [solicitud a Gemini](../../src/services/geminiService.ts).
-- **Comprobación manual:** revisar las ramas sin clave, sin consentimiento, con error y con éxito; usar solo una imagen sintética sin información identificable para una solicitud real. Comprobar que cerrar el formulario sin guardar no añade la lectura.
+- [Pruebas del servicio](../../tests/gemini.test.ts): solicitudes y errores con `fetch` simulado. [Pruebas de navegador](../../tests/e2e/photo.spec.ts): clave, consentimiento, compresión en JPEG, recuperación ante errores y guardado explícito. No contactan a Google.
+- **Comprobación manual:** abrir cámara y galería nativas en un móvil. Si se prueba una solicitud real, usar solo una imagen sintética sin información identificable.
