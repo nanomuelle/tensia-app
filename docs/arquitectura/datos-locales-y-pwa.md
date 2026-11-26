@@ -23,4 +23,6 @@ No hay sincronización de las lecturas con un servidor en los flujos locales. La
 ## Código y verificación
 
 - [Esquema de Dexie](../../src/services/db.ts), [ajustes](../../src/services/settingsService.ts), [persistencia](../../src/hooks/useStoragePersistence.ts), [banner](../../src/components/StorageBanner.tsx) y [configuración PWA](../../vite.config.ts).
-- [Pruebas de navegador](../../tests/e2e/ampa.spec.ts): restauración local de preferencias de informes. **Comprobación manual:** con el build servido por preview, abrir la app en línea, esperar la activación del service worker, desconectar la red y recargar. Registrar una toma sintética y volver a recargar para comprobar caché y datos por separado.
+- Pruebas de navegador: [restauración de preferencias](../../tests/e2e/ampa.spec.ts), [migración de IndexedDB](../../tests/e2e/readings-db.spec.ts) y [solicitud o descarte del aviso de persistencia](../../tests/e2e/storage.spec.ts).
+- [Pruebas PWA](../../tests/pwa/offline.spec.ts): manifiesto y flujos locales sin red una vez activado el service worker en preview. Comprueban recarga, alta, backup, importación y PDF. Las rutas de los PNG de instalación devuelven HTML porque los recursos no se incluyen en el build; la prueba los registra como fallo conocido, no como instalación válida.
+- **Comprobación manual:** verificar la instalación en un dispositivo tras corregir los iconos. Una primera visita sin red no tiene la caché necesaria.

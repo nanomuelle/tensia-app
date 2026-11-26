@@ -119,4 +119,32 @@ test('PDF general propone el intervalo completo y comparte el perfil con AMPA', 
   await page.getByRole('button', { name: 'Más opciones', exact: true }).click();
   await page.getByRole('button', { name: 'Exportar PDF', exact: true }).click();
   await expect(dialog.getByLabel('Nombre', { exact: true })).toHaveValue('Fernando Pérez');
+  await expect(dialog.getByLabel('Medicación')).toHaveValue('Sin medicación');
+  await expect(dialog.getByLabel('Desde')).toHaveValue('2026-11-16');
+  await expect(dialog.getByLabel('Hasta')).toHaveValue('2026-11-23');
+
+  const downloads: string[] = [];
+  page.on('download', file => downloads.push(file.suggestedFilename()));
+  await dialog.getByLabel('Desde').fill('2026-11-17');
+  await dialog.getByLabel('Hasta').fill('2026-11-22');
+  await dialog.getByRole('button', { name: 'Generar y descargar PDF' }).click();
+  await expect(dialog.getByText('No hay lecturas en el intervalo seleccionado.')).toBeVisible();
+  await expect(dialog).toBeVisible();
+  expect(downloads).toEqual([]);
+});
+
+test('conserva las franjas pero no la semana seleccionada al reabrir el informe AMPA', async ({ page }) => {
+  await seedReadings(page, [...readings, { ...readings[0], timestamp: '2026-11-24T08:00:00.000Z' }]);
+  await page.reload();
+  const dialog = await openReport(page);
+  const periods = dialog.getByLabel('Franjas incluidas');
+  const week = dialog.getByLabel('Semana del informe');
+  await periods.selectOption('morning-night');
+  await expect(week).toHaveValue('2026-11-23');
+  await week.selectOption('2026-11-16');
+  await expect(week).toHaveValue('2026-11-16');
+  await dialog.getByRole('button', { name: 'Cerrar' }).click();
+  await openReport(page);
+  await expect(periods).toHaveValue('morning-night');
+  await expect(week).toHaveValue('2026-11-23');
 });
